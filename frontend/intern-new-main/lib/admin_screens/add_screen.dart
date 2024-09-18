@@ -146,14 +146,15 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
     });
   }
 
-  void _launchLink(String url) async {
+  Future<void> _launchLink(String url) async {
     // Add https:// if missing
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://$url';
     }
 
-    if (await canLaunch(url)) {
-      await launch(url, forceSafariVC: false, forceWebView: false);
+    Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     } else {
       throw 'Could not launch $url';
     }
@@ -167,7 +168,8 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
     });
   }
 
-  _saveTitleToSharedPreferences(String id, String title, String link) async {
+  Future<void> _saveTitleToSharedPreferences(
+      String id, String title, String link) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // Menyimpan title dan link dengan key unik
     await prefs.setString('title_$id', title);
