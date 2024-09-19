@@ -26,6 +26,8 @@ const loginUser = async (req, res) => {
                if (passwordMatch) {
                     const data = {
                          user_ID: dataUser.user_ID,
+                         name : dataUser.name,
+                         email: dataUser.email,
                          isAdmin: dataUser.isAdmin
                     }
                     const token = await jsonwebtoken.sign(data, jwtToken)

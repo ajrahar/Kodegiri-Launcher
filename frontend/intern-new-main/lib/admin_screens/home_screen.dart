@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'add_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Kodegiri/admin_screens/home_screen.dart';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,20 +23,22 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController _searchController = TextEditingController();
   bool _viewArchived = false;
 
-  String adminName = 'Admin Name';
-  String adminEmail = 'admin@example.com';
+  String adminName = '';
+  String adminEmail = '';
+  List _datalink = [];
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_filterLinks);
-    loadLinksFromSharedPreferences();
+    // _searchController.addListener(_filterLinks);
+    // loadLinksFromSharedPreferences();
     _loadProfile();
+    _getAllDataLinks();
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_filterLinks);
+    // _searchController.removeListener(_filterLinks);
     _searchController.dispose();
     super.dispose();
   }
@@ -42,302 +46,53 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      adminName = prefs.getString('admin_name') ?? 'Admin Name';
-      adminEmail = prefs.getString('admin_email') ?? 'admin@example.com';
+      adminName = prefs.getString('name') ?? 'tidak ada nama';
+      adminEmail = prefs.getString('email') ?? 'tidak ada email';
     });
   }
 
-  Future<void> loadLinksFromSharedPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  Future _getAllDataLinks() async {
+    String token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiNTAwYjllY2ItYTEzOC00ZjI4LThhOWQtZGRiMjk4NDE1NTYxIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY2NjMyOTV9.dwubiSmTms0fbX2THbgZvUv0dXrRHgon_aGdZqYxfu4";
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:3000/api/links',
+        ),
+        headers: {
+          'Authorization': '$token',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-    // Get all keys from SharedPreferences
-    Set<String> keys = prefs.getKeys();
+        if (data['status'] == true) {
+          // Extract the 'response' field from the decoded JSON
+          final List<dynamic> links = data['response'];
 
-    List<Map<String, String>> loadedLinks = [];
-    List<Map<String, String>> loadedArchivedLinks = [];
-
-    // Loop through keys to find matching key (title_, link_, archived_)
-    for (String key in keys) {
-      if (key.startsWith('title_')) {
-        String id = key.replaceFirst('title_', ''); // Extract ID from key
-        String? title = prefs.getString('title_$id');
-        String? link = prefs.getString('link_$id');
-        bool? isArchived = prefs.getBool('archived_$id') ?? false;
-
-        if (title != null && link != null) {
-          if (isArchived) {
-            loadedArchivedLinks.add({'title': title, 'link': link});
-          } else {
-            loadedLinks.add({'title': title, 'link': link});
-          }
+          // Ensure that links are correctly processed
+          setState(() {
+            _datalink = links;
+          });
+          print('data : $links');
+        } else {
+          print('Failed to get links: ${data['message']}');
         }
-      }
-    }
-
-    setState(() {
-      _links = loadedLinks;
-      _archivedLinks = loadedArchivedLinks;
-      _filterLinks();
-    });
-  }
-
-  Future<void> _saveLinksToSharedPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // Remove all previous data
-    Set<String> keys = prefs.getKeys();
-    for (String key in keys) {
-      if (key.startsWith('title_')) {
-        String id = key.replaceFirst('title_', '');
-        prefs.remove('title_$id');
-        prefs.remove('link_$id');
-        prefs.remove('archived_$id');
-      }
-    }
-
-    // Save the current links
-    for (int i = 0; i < _links.length; i++) {
-      String id = _getIdFromLink(_links[i]['link']!);
-      prefs.setString('title_$id', _links[i]['title']!);
-      prefs.setString('link_$id', _links[i]['link']!);
-      prefs.setBool('archived_$id', false);
-    }
-
-    for (int i = 0; i < _archivedLinks.length; i++) {
-      String id = _getIdFromLink(_archivedLinks[i]['link']!);
-      prefs.setString('title_$id', _archivedLinks[i]['title']!);
-      prefs.setString('link_$id', _archivedLinks[i]['link']!);
-      prefs.setBool('archived_$id', true);
-    }
-  }
-
-  void _archiveLink(int index) async {
-    // Get the actual index of the link in the _links list based on the filtered list
-    Map<String, String> linkToArchive =
-        _filteredLinks[index]; // Get the link data from the filtered list
-    int originalIndex = _links.indexWhere((link) =>
-        link['link'] == linkToArchive['link']); // Find the index in _links
-
-    if (originalIndex < 0 || originalIndex >= _links.length) return;
-
-    String id = _getIdFromLink(_links[originalIndex]['link']!);
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('archived_$id', true);
-
-    setState(() {
-      // Move the link to the archived list and remove from the main list
-      _archivedLinks.add(_links[originalIndex]);
-      _links.removeAt(originalIndex);
-      _filterLinks(); // Refresh the filtered list
-    });
-
-    await _saveLinksToSharedPreferences();
-
-    _showFeedback('Link archived successfully');
-  }
-
-  void _unarchiveLink(int index) async {
-    // Get the actual index of the link in the _archivedLinks list based on the filtered list
-    Map<String, String> linkToUnarchive =
-        _filteredLinks[index]; // Get the link data from the filtered list
-    int originalIndex = _archivedLinks.indexWhere((link) =>
-        link['link'] ==
-        linkToUnarchive['link']); // Find the index in _archivedLinks
-
-    if (originalIndex < 0 || originalIndex >= _archivedLinks.length) return;
-
-    String id = _getIdFromLink(_archivedLinks[originalIndex]['link']!);
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('archived_$id', false);
-
-    setState(() {
-      // Move the link to the main list and remove from the archived list
-      _links.add(_archivedLinks[originalIndex]);
-      _archivedLinks.removeAt(originalIndex);
-      _filterLinks(); // Refresh the filtered list
-    });
-
-    await _saveLinksToSharedPreferences();
-  }
-
-  Future<void> _confirmAndDeleteLink(int index) async {
-    bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Deletion'),
-          content: const Text('Are you sure you want to delete this link?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm == true) {
-      // Use a correct index based on whether viewing archived or not
-      if (_viewArchived) {
-        _deleteLink(index, isArchived: true);
       } else {
-        _deleteLink(index, isArchived: false);
+        print('Failed to get links: ${response.statusCode}');
       }
+    } catch (e) {
+      print('Erorr cant get data : $e');
     }
   }
 
-  void _deleteLink(int index, {required bool isArchived}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    if (index < 0 ||
-        index >= (_viewArchived ? _archivedLinks.length : _links.length)) {
-      // Index is out of bounds, handle the error
-      print('Invalid index $index');
-      return;
-    }
-
-    // Determine the ID and remove from the appropriate list
-    String id;
-    if (isArchived) {
-      id = _getIdFromLink(_archivedLinks[index]['link']!);
-      _archivedLinks.removeAt(index);
-    } else {
-      id = _getIdFromLink(_links[index]['link']!);
-      _links.removeAt(index);
-    }
-
-    // Remove the link from SharedPreferences
-    prefs.remove('title_$id');
-    prefs.remove('link_$id');
-    prefs.remove('archived_$id');
-
-    setState(() {
-      _filterLinks();
-      _saveLinksToSharedPreferences();
-    });
-  }
-
-  void _toggleViewArchived() {
-    setState(() {
-      _viewArchived = !_viewArchived;
-      _filterLinks();
-    });
-  }
-
-  void _filterLinks() {
-    String searchTerm = _searchController.text.toLowerCase();
-    setState(() {
-      if (_viewArchived) {
-        _filteredLinks = _archivedLinks
-            .where((link) =>
-                link['title']!.toLowerCase().contains(searchTerm) ||
-                link['link']!.toLowerCase().contains(searchTerm))
-            .toList();
-      } else {
-        _filteredLinks = _links
-            .where((link) =>
-                link['title']!.toLowerCase().contains(searchTerm) ||
-                link['link']!.toLowerCase().contains(searchTerm))
-            .toList();
-      }
-    });
-  }
-
-  Future<void> _launchLink(String url) async {
-    Uri uri;
-
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      uri = Uri.parse('https://$url');
-    } else {
-      uri = Uri.parse(url);
-    }
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $uri';
-    }
-  }
-
-  Widget _buildCard(Map<String, String> linkData, int index) {
-    return GestureDetector(
-      onTap: () => _launchLink(linkData['link']!),
-      child: Card(
-        color: Colors.white,
-        elevation: 5,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Flexible(
-                child: Text(
-                  linkData['title']!,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Flexible(
-                child: Text(
-                  linkData['link']!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (_viewArchived)
-                    _buildIconButton(Icons.unarchive, Colors.green,
-                        () => _unarchiveLink(index))
-                  else
-                    _buildIconButton(Icons.archive, Colors.orange,
-                        () => _archiveLink(index)),
-                  _buildIconButton(
-                      Icons.edit, Colors.blue, () => _editLink(index)),
-                  _buildIconButton(Icons.delete, Colors.red,
-                      () => _confirmAndDeleteLink(index)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIconButton(IconData icon, Color color, VoidCallback onPressed) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Icon(icon, color: color, size: 27),
-        ),
-      ),
+  void _logout() async {
+    await SharedPreferencesHelper.removeData('name');
+    await SharedPreferencesHelper.removeData('email');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
     );
   }
 
@@ -399,9 +154,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSpacing: 16.0,
                       childAspectRatio: 1.0,
                     ),
-                    itemCount: _filteredLinks.length,
+                    itemCount: _datalink.length,
                     itemBuilder: (context, index) {
-                      return _buildCard(_filteredLinks[index], index);
+                      return _buildCard(_datalink[index], index);
                     },
                   ),
                 ),
@@ -422,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (result != null) {
                     setState(() {
                       _links.addAll(List<Map<String, String>>.from(result));
-                      _filterLinks();
+                      // _filterLinks();
                     });
                   }
                 });
@@ -457,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Admin Name', // Update with current admin name
+                  adminName, // Update with current admin name
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -466,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'admin@example.com', // Update with current admin email
+                  adminEmail, // Update with current admin email
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
@@ -500,38 +255,89 @@ class _HomeScreenState extends State<HomeScreen> {
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.black),
             title: const Text('Logout'),
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            },
+            onTap: _logout,
           ),
         ],
       ),
     );
   }
 
-  String _getIdFromLink(String link) {
-    return link;
-  }
-
-  void _showFeedback(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
+  Widget _buildCard(Map<String, dynamic> linkData, int index) {
+    return GestureDetector(
+      onTap: () => _launchLink(linkData['url']!),
+      child: Card(
+        color: Colors.white,
+        elevation: 5,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(
+                child: Text(
+                  linkData['title'] ?? 'No Title',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Flexible(
+                child: Text(
+                  linkData['url'] ?? 'No URL',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (_viewArchived)
+                    _buildIconButton(Icons.unarchive, Colors.green,
+                        () => _unarchiveLink(index))
+                  else
+                    _buildIconButton(Icons.archive, Colors.orange,
+                        () => _archiveLink(index)),
+                  _buildIconButton(
+                      Icons.edit, Colors.blue, () => _editLink(index)),
+                  _buildIconButton(Icons.delete, Colors.red,
+                      () => _confirmAndDeleteLink(index)),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  void _editLink(int index) {
-    if (index < 0 || index >= _filteredLinks.length) {
-      // Index is out of bounds, handle the error
-      print('Invalid index $index');
-      return;
-    }
+  Widget _buildIconButton(IconData icon, Color color, VoidCallback onPressed) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(icon, color: color, size: 27),
+        ),
+      ),
+    );
+  }
 
+  void _editLink(int index) { 
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -544,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> {
               } else {
                 _links[index] = updatedData;
               }
-              _filterLinks();
+              // _filterLinks();
               _saveLinksToSharedPreferences();
             });
           },
@@ -552,6 +358,238 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+void _deleteLink(int index, {required bool isArchived}) async {
+  // SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // if (index < 0 ||
+  //     index >= (_viewArchived ? _archivedLinks.length : _links.length)) {
+  //   // Index is out of bounds, handle the error
+  //   print('Invalid index $index');
+  //   return;
+  // }
+
+  // // Determine the ID and remove from the appropriate list
+  // String id;
+  // if (isArchived) {
+  //   id = _getIdFromLink(_archivedLinks[index]['link']!);
+  //   _archivedLinks.removeAt(index);
+  // } else {
+  //   id = _getIdFromLink(_links[index]['link']!);
+  //   _links.removeAt(index);
+  // }
+
+  // // Remove the link from SharedPreferences
+  // prefs.remove('title_$id');
+  // prefs.remove('link_$id');
+  // prefs.remove('archived_$id');
+
+  // setState(() {
+  //   _filterLinks();
+  //   _saveLinksToSharedPreferences();
+  // });
+}
+
+Future<void> loadLinksFromSharedPreferences() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // Get all keys from SharedPreferences
+  Set<String> keys = prefs.getKeys();
+
+  List<Map<String, String>> loadedLinks = [];
+  List<Map<String, String>> loadedArchivedLinks = [];
+
+  // Loop through keys to find matching key (title_, link_, archived_)
+  for (String key in keys) {
+    if (key.startsWith('title_')) {
+      String id = key.replaceFirst('title_', ''); // Extract ID from key
+      String? title = prefs.getString('title_$id');
+      String? link = prefs.getString('link_$id');
+      bool? isArchived = prefs.getBool('archived_$id') ?? false;
+
+      if (title != null && link != null) {
+        if (isArchived) {
+          loadedArchivedLinks.add({'title': title, 'link': link});
+        } else {
+          loadedLinks.add({'title': title, 'link': link});
+        }
+      }
+    }
+  }
+
+  // setState(() {
+  //   _links = loadedLinks;
+  //   _archivedLinks = loadedArchivedLinks;
+  //   _filterLinks();
+  // });
+}
+
+Future<void> _saveLinksToSharedPreferences() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // Remove all previous data
+  Set<String> keys = prefs.getKeys();
+  for (String key in keys) {
+    if (key.startsWith('title_')) {
+      String id = key.replaceFirst('title_', '');
+      prefs.remove('title_$id');
+      prefs.remove('link_$id');
+      prefs.remove('archived_$id');
+    }
+  }
+
+  // // Save the current links
+  // for (int i = 0; i < _links.length; i++) {
+  //   String id = _getIdFromLink(_links[i]['link']!);
+  //   prefs.setString('title_$id', _links[i]['title']!);
+  //   prefs.setString('link_$id', _links[i]['link']!);
+  //   prefs.setBool('archived_$id', false);
+  // }
+
+  // for (int i = 0; i < _archivedLinks.length; i++) {
+  //   String id = _getIdFromLink(_archivedLinks[i]['link']!);
+  //   prefs.setString('title_$id', _archivedLinks[i]['title']!);
+  //   prefs.setString('link_$id', _archivedLinks[i]['link']!);
+  //   prefs.setBool('archived_$id', true);
+  // }
+}
+
+void _archiveLink(int index) async {
+  // Get the actual index of the link in the _links list based on the filtered list
+  // Map<String, String> linkToArchive =
+  //     _filteredLinks[index]; // Get the link data from the filtered list
+  // int originalIndex = _links.indexWhere((link) =>
+  //     link['link'] == linkToArchive['link']); // Find the index in _links
+
+  // if (originalIndex < 0 || originalIndex >= _links.length) return;
+
+  // String id = _getIdFromLink(_links[originalIndex]['link']!);
+
+  // SharedPreferences prefs = await SharedPreferences.getInstance();
+  // await prefs.setBool('archived_$id', true);
+
+  // setState(() {
+  //   // Move the link to the archived list and remove from the main list
+  //   _archivedLinks.add(_links[originalIndex]);
+  //   _links.removeAt(originalIndex);
+  //   _filterLinks(); // Refresh the filtered list
+  // });
+
+  await _saveLinksToSharedPreferences();
+
+  _showFeedback('Link archived successfully');
+}
+
+void _unarchiveLink(int index) async {
+  // // Get the actual index of the link in the _archivedLinks list based on the filtered list
+  // Map<String, String> linkToUnarchive =
+  //     _filteredLinks[index]; // Get the link data from the filtered list
+  // int originalIndex = _archivedLinks.indexWhere((link) =>
+  //     link['link'] ==
+  //     linkToUnarchive['link']); // Find the index in _archivedLinks
+
+  // if (originalIndex < 0 || originalIndex >= _archivedLinks.length) return;
+
+  // String id = _getIdFromLink(_archivedLinks[originalIndex]['link']!);
+
+  // SharedPreferences prefs = await SharedPreferences.getInstance();
+  // await prefs.setBool('archived_$id', false);
+
+  // setState(() {
+  //   // Move the link to the main list and remove from the archived list
+  //   _links.add(_archivedLinks[originalIndex]);
+  //   _archivedLinks.removeAt(originalIndex);
+  //   _filterLinks(); // Refresh the filtered list
+  // });
+
+  await _saveLinksToSharedPreferences();
+}
+
+Future<void> _confirmAndDeleteLink(int index) async {
+  // bool? confirm = await showDialog<bool>(
+  //   // context: context,
+  //   builder: (BuildContext context) {
+  //     return AlertDialog(
+  //       title: const Text('Confirm Deletion'),
+  //       content: const Text('Are you sure you want to delete this link?'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.of(context).pop(false),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () => Navigator.of(context).pop(true),
+  //           child: const Text('Delete'),
+  //         ),
+  //       ],
+  //     );
+  //   },
+  // );
+
+  // if (confirm == true) {
+  //   // Use a correct index based on whether viewing archived or not
+  //   if (_viewArchived) {
+  //     _deleteLink(index, isArchived: true);
+  //   } else {
+  //     _deleteLink(index, isArchived: false);
+  //   }
+  // }
+}
+
+void _toggleViewArchived() {
+  // setState(() {
+  //   _viewArchived = !_viewArchived;
+  //   _filterLinks();
+  // });
+}
+
+// void _filterLinks() {
+//   String searchTerm = _searchController.text.toLowerCase();
+//   setState(() {
+//     if (_viewArchived) {
+//       _filteredLinks = _archivedLinks
+//           .where((link) =>
+//               link['title']!.toLowerCase().contains(searchTerm) ||
+//               link['url']!.toLowerCase().contains(searchTerm))
+//           .toList();
+//     } else {
+//       _filteredLinks = _links
+//           .where((link) =>
+//               link['title']!.toLowerCase().contains(searchTerm) ||
+//               link['url']!.toLowerCase().contains(searchTerm))
+//           .toList();
+//     }
+//   });
+// }
+
+Future<void> _launchLink(String url) async {
+  Uri uri;
+
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    uri = Uri.parse('https://$url');
+  } else {
+    uri = Uri.parse(url);
+  }
+
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri);
+  } else {
+    throw 'Could not launch $uri';
+  }
+}
+
+String _getIdFromLink(String link) {
+  return link;
+}
+
+void _showFeedback(String message) {
+  // ScaffoldMessenger.of(context).showSnackBar(
+  //   SnackBar(
+  //     content: Text(message),
+  //     duration: const Duration(seconds: 2),
+  //   ),
+  // );
 }
 
 class EditScreen extends StatelessWidget {

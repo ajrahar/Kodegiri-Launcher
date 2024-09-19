@@ -1,3 +1,4 @@
+const { response } = require('express');
 const models = require('../../database/models/index');
 
 // Get all links
@@ -5,12 +6,12 @@ const getAllLinks = async (req, res) => {
      try {
           const response = await models.Link.findAll();
           if (response.length === 0) {
-               return res.status(404).json({ message: "Tidak ada data link ditemukan." });
+               return res.status(404).json({ status: false, message: "Link data not found" });
           }
-          res.status(200).json(response);
+          res.status(200).json({ status: true, message: "Link data found successfully", response: response});
      } catch (error) {
-          console.log("Data link gagal ditemukan : \n", error.message);
-          res.status(500).json({ message: "Data link gagal ditemukan" });
+          console.log("Cannot get all link data : \n", error.message);
+          res.status(500).json({ status: false, message: "Cannot get all link data" });
      }
 }
 
@@ -23,13 +24,13 @@ const getLinksById = async (req, res) => {
                }
           });
           if (response) {
-               return res.status(200).json(response);
+               return res.status(200).json({status: true, message: "Link data by id found successfully", response: response});
           } else {
-               return res.status(404).json({ message: "ID data link tidak ditemukan." });
+               return res.status(404).json({ status: false, message: "Link data by id not found" });
           }
      } catch (error) {
-          console.log("Data link gagal ditemukan : \n", error.message);
-          res.status(500).json({ message: "Data link gagal ditemukan" });
+          console.log("Cannot get link data by id : \n", error.message);
+          res.status(500).json({ status: false, message: "Cannot get link data by id", response: error.message });
      }
 }
 
@@ -37,10 +38,10 @@ const getLinksById = async (req, res) => {
 const createLinks = async (req, res) => {
      try {
           await models.Link.create(req.body);
-          res.status(201).json({ success: "Data link berhasil dikirim." });
+          res.status(201).json({status: true, success: "Link data created successfully", response : req.body });
      } catch (error) {
-          console.log("Data link gagal dikirim : \n", error.message);
-          res.status(500).json({ message: "Data link gagal dikirim" });
+          console.log("Cannot create new link : \n", error.message);
+          res.status(500).json({ status: false, message: "Cannot create new link", response: error.message });
      }
 }
 
@@ -54,13 +55,13 @@ const UpdateLinks = async (req, res) => {
           });
 
           if (updatedRows > 0) {
-               return res.status(200).json({ message: "Data link berhasil diupdate." });
+               return res.status(200).json({ status: true, message: "Link data updated successfully", response: updatedRows    });
           } else {
-               return res.status(404).json({ message: "ID data link tidak ditemukan." });
+               return res.status(404).json({ status:false, message: "Link data by id not found" });
           }
      } catch (error) {
-          console.log("Data link gagal diupdate : \n", error.message);
-          res.status(500).json({ message: "Data link gagal diupdate" });
+          console.log("Cannot update link data : \n", error.message);
+          res.status(500).json({ status: false, message: "Cannot update link data", response: error.message });
      }
 }
 
@@ -74,13 +75,13 @@ const DeleteLinks = async (req, res) => {
           });
 
           if (response > 0) {
-               return res.status(200).json({ message: "Data link berhasil dihapus." });
+               return res.status(200).json({ status: true, message: "Link data deleted successfully", response: response });
           } else {
-               return res.status(404).json({ message: "ID data link tidak ditemukan." });
+               return res.status(404).json({ status : false, message: "Link data by id not found" });
           }
      } catch (error) {
-          console.log("Data link gagal dihapus : \n", error.message);
-          res.status(500).json({ message: "Data link gagal dihapus" });
+          console.log("Cannot delete link data : \n", error.message);
+          res.status(500).json({ status: false, message: "Cannot delete link data", response : error.message });
      }
 }
 

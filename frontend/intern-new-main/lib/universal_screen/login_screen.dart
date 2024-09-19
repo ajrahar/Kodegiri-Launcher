@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:Kodegiri/admin_screens/home_screen.dart'; // Ensure you have this file and it is properly set up
-import 'package:Kodegiri/user_screens/uhome_screen.dart'; // Ensure you h 
+import 'package:Kodegiri/user_screens/uhome_screen.dart'; // Ensure you h
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,40 +13,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  List _datauser = [];
-
-  // Future<void> postDataUser() async {
-  //   try {
-  //     final response = await http.post(Uri.parse('http://localhost:3000/api/user/auth/login', ), body: {
-  //       'username': _usernameController.text,
-  //       'password': _passwordController.text,
-  //     });
-  //     if (response.statusCode == 200) {
-  //       final data = jsonDecode(response.body);
-  //       // print('Data users: $data');
-  //       setState(() {
-  //         _datauser = data;
-  //         // print('Data user berhasil diperbarui: $_datauser');
-  //       });
-  //     } else if (response.statusCode == 404) {
-  //       final message = jsonDecode(response.body)['message'];
-  //       print('Error: $message'); // Error: Tidak ada data user ditemukan
-  //     } else {
-  //       final message = jsonDecode(response.body)['message'];
-  //       print('Error: $message'); // Error: Data user gagal ditemukan
-  //     }
-  //   } catch (e) {
-  //     print('Cannot get data. Error : $e');
-  //   }
-  // }
-
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void initState() {
-    // TODO: implement initState 
+    // TODO: implement initState
     super.initState();
     // _saveEmailToSharedPreferences(email.text);
   }
@@ -105,7 +79,9 @@ class _LoginScreenState extends State<LoginScreen> {
         String token = responseData['token'];
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         bool isAdmin = decodedToken['isAdmin'] == true;
-
+        await SharedPreferencesHelper.saveString('name', decodedToken['name']);
+        await SharedPreferencesHelper.saveString('email', decodedToken['email']);
+        await SharedPreferencesHelper.saveString('token', token);
         _sweatAlert(context, isAdmin);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -122,8 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('data user : \n');
-    print(_datauser);
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
