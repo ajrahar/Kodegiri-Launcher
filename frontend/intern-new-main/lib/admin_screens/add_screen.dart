@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'dart:math';
+import 'dart:convert';
 
 class WebLauncherHomePage extends StatefulWidget {
   const WebLauncherHomePage({super.key});
@@ -16,6 +18,42 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
   int? _editingIndex;
+
+  void _saveLink() async {
+    if (_formKey.currentState!.validate()) {
+      final title = _titleController.text;
+      final url = _linkController.text;
+      String token =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiOGQ5ZjRlNmItNTAyMi00YWY0LTljODQtNWM3OThkOGEyYjc4IiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY3MTk1MjN9.HWx1jEcPwIKXiSpTbyZuL6mcehtg8yYdMnPwqZp-e_g";
+
+      final Map<String, dynamic> linkData = {"title": title, "url": url};
+
+      try {
+        final response = await http.post(
+          Uri.parse('http://localhost:3000/api/links'),
+          headers: {
+            'Authorization': '$token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(linkData),
+        );
+        if (response.statusCode == 201) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Link Berhasil ditambahkan')),
+          );
+          
+         Navigator.pop(context, _links);
+
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Link Gagal ditambahkan')),
+          );
+        }
+      } catch (error) {
+        print('Terjadi kesalahan: $error');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,33 +143,6 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
     );
   }
 
-  void _saveLink() {
-    if (_formKey.currentState!.validate()) {
-      final newLink = {
-        'title': _titleController.text,
-        'link': _linkController.text,
-      };
-
-      setState(() {
-        if (_editingIndex == null) {
-          _links.add(newLink);
-        } else {
-          _links[_editingIndex!] = newLink;
-          _editingIndex = null;
-        }
-      });
-      String uniqueId = generateUniqueId();
-      _saveTitleToSharedPreferences(
-          uniqueId, _titleController.text, _linkController.text);
-
-      _titleController.clear();
-      _linkController.clear();
-
-      // Send the updated list back to HomeScreen
-      Navigator.pop(context, _links);
-    }
-  }
-
   void _editLink(int index) {
     setState(() {
       _titleController.text = _links[index]['title']!;
@@ -147,7 +158,6 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
   }
 
   Future<void> _launchLink(String url) async {
-    // Add https:// if missing
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://$url';
     }

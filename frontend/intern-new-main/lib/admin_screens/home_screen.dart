@@ -51,9 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future _getAllDataLinks() async {
+  Future<void> _getAllDataLinks() async {
     String token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiNTAwYjllY2ItYTEzOC00ZjI4LThhOWQtZGRiMjk4NDE1NTYxIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY2NjMyOTV9.dwubiSmTms0fbX2THbgZvUv0dXrRHgon_aGdZqYxfu4";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiOGQ5ZjRlNmItNTAyMi00YWY0LTljODQtNWM3OThkOGEyYjc4IiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY3MTk1MjN9.HWx1jEcPwIKXiSpTbyZuL6mcehtg8yYdMnPwqZp-e_g";
     try {
       final response = await http.get(
         Uri.parse(
@@ -64,10 +64,11 @@ class _HomeScreenState extends State<HomeScreen> {
           'Content-Type': 'application/json',
         },
       );
+      // print('response : ${response.body}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        if (data['status'] == true) {
+        if (data['status']) {
           // Extract the 'response' field from the decoded JSON
           final List<dynamic> links = data['response'];
 
@@ -84,6 +85,24 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       print('Erorr cant get data : $e');
+    }
+  }
+
+  Future<void> _patchLink(int index, Map<String, String> updatedData) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('http://localhost:3000/api/link'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(updatedData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Data updated successfully');
+      } else {
+        print('Failed to update data');
+      }
+    } catch (e) {
+      print('Error occurred: $e');
     }
   }
 
@@ -174,9 +193,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (context) => const WebLauncherHomePage(),
                   ),
                 ).then((result) {
+                  _getAllDataLinks();
                   if (result != null) {
                     setState(() {
-                      _links.addAll(List<Map<String, String>>.from(result));
+                     _links = List<Map<String, String>>.from(result);
                       // _filterLinks();
                     });
                   }
@@ -337,21 +357,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _editLink(int index) { 
+  void _editLink(int index) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditScreen(
-          linkData: _filteredLinks[index],
+          linkData: _datalink[index],
           onSave: (updatedData) {
+            print('data edit :$updatedData');
             setState(() {
-              if (_viewArchived) {
-                _archivedLinks[index] = updatedData;
-              } else {
-                _links[index] = updatedData;
-              }
+              // if (_viewArchived) {
+              //   _archivedLinks[index] = updatedData;
+              // } else {
+              //   _links[index] = updatedData;
+              // }
               // _filterLinks();
-              _saveLinksToSharedPreferences();
+              // _saveLinksToSharedPreferences();
             });
           },
         ),
@@ -360,36 +381,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-void _deleteLink(int index, {required bool isArchived}) async {
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  // if (index < 0 ||
-  //     index >= (_viewArchived ? _archivedLinks.length : _links.length)) {
-  //   // Index is out of bounds, handle the error
-  //   print('Invalid index $index');
-  //   return;
-  // }
-
-  // // Determine the ID and remove from the appropriate list
-  // String id;
-  // if (isArchived) {
-  //   id = _getIdFromLink(_archivedLinks[index]['link']!);
-  //   _archivedLinks.removeAt(index);
-  // } else {
-  //   id = _getIdFromLink(_links[index]['link']!);
-  //   _links.removeAt(index);
-  // }
-
-  // // Remove the link from SharedPreferences
-  // prefs.remove('title_$id');
-  // prefs.remove('link_$id');
-  // prefs.remove('archived_$id');
-
-  // setState(() {
-  //   _filterLinks();
-  //   _saveLinksToSharedPreferences();
-  // });
+void _deleteLink(int index) async {
+  // _datalink[index];
+  
 }
+
+
+
+
+
 
 Future<void> loadLinksFromSharedPreferences() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -506,36 +506,39 @@ void _unarchiveLink(int index) async {
   await _saveLinksToSharedPreferences();
 }
 
-Future<void> _confirmAndDeleteLink(int index) async {
-  // bool? confirm = await showDialog<bool>(
-  //   // context: context,
-  //   builder: (BuildContext context) {
-  //     return AlertDialog(
-  //       title: const Text('Confirm Deletion'),
-  //       content: const Text('Are you sure you want to delete this link?'),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.of(context).pop(false),
-  //           child: const Text('Cancel'),
-  //         ),
-  //         TextButton(
-  //           onPressed: () => Navigator.of(context).pop(true),
-  //           child: const Text('Delete'),
-  //         ),
-  //       ],
-  //     );
-  //   },
-  // );
+void _confirmAndDeleteLink(int index, context) async {
+  final link = _links[index]; 
 
-  // if (confirm == true) {
-  //   // Use a correct index based on whether viewing archived or not
-  //   if (_viewArchived) {
-  //     _deleteLink(index, isArchived: true);
-  //   } else {
-  //     _deleteLink(index, isArchived: false);
-  //   }
-  // }
-}
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete this link?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final response = await http.delete(
+                Uri.parse('http://localhost:3000/api/link/${link}'),
+                headers: {'Content-Type': 'application/json'},
+              );
+              if (response.statusCode == 200) {
+                // _getAllDataLinks();
+              } else {
+                print('Failed to delete link');
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 void _toggleViewArchived() {
   // setState(() {
@@ -593,7 +596,7 @@ void _showFeedback(String message) {
 }
 
 class EditScreen extends StatelessWidget {
-  final Map<String, String> linkData;
+  final Map<String, dynamic> linkData;
   final Function(Map<String, String>) onSave;
 
   const EditScreen({super.key, required this.linkData, required this.onSave});
@@ -603,7 +606,7 @@ class EditScreen extends StatelessWidget {
     final TextEditingController titleController =
         TextEditingController(text: linkData['title']);
     final TextEditingController linkController =
-        TextEditingController(text: linkData['link']);
+        TextEditingController(text: linkData['url']);
 
     return Scaffold(
       appBar: AppBar(

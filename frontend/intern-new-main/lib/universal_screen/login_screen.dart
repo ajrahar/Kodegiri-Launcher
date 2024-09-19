@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Kodegiri/admin_screens/home_screen.dart'; // Ensure you have this file and it is properly set up
-import 'package:Kodegiri/user_screens/uhome_screen.dart'; // Ensure you h
+import 'package:Kodegiri/admin_screens/home_screen.dart'; 
+import 'package:Kodegiri/user_screens/uhome_screen.dart'; 
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
@@ -43,8 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
             onPressed: () {
-              Navigator.of(context).pop(); // Menutup dialog
-              // Optionally, you can navigate based on admin role
+              Navigator.of(context).pop();             
               if (isAdmin) {
                 Navigator.pushReplacement(
                   context,
@@ -74,8 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
           body: {'email': email, 'password': password});
 
       var responseData = jsonDecode(response.body);
-
-      if (responseData['status'] == true) {
+      // print('response : $responseData');
+      if (responseData['status']) {
         String token = responseData['token'];
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         bool isAdmin = decodedToken['isAdmin'] == true;
