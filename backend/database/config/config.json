@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "root",
-    "password": "",
+    "password": "mysqldbpassword",
     "database": "web_launcher_crm",
     "host": "localhost",
     "dialect": "mysql"
