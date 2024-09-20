@@ -21,7 +21,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
 
   void _saveLink() async {
     if (_formKey.currentState!.validate()) {
-      final title = _titleController.text;
+      final title = _titleController.text; 
       final url = _linkController.text;
       String token =
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiOGQ5ZjRlNmItNTAyMi00YWY0LTljODQtNWM3OThkOGEyYjc4IiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY3MTk1MjN9.HWx1jEcPwIKXiSpTbyZuL6mcehtg8yYdMnPwqZp-e_g";

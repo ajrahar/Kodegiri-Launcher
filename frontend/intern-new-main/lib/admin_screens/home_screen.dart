@@ -2,6 +2,7 @@ import 'package:Kodegiri/admin_screens/edit_profile_screen.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 import 'package:Kodegiri/universal_screen/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'add_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -105,6 +106,56 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error occurred: $e');
     }
   }
+
+  
+Future<void> _deletedLink(BuildContext context, int index) async {
+  String token =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiNTAwYjllY2ItYTEzOC00ZjI4LThhOWQtZGRiMjk4NDE1NTYxIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY2NjMyOTV9.dwubiSmTms0fbX2THbgZvUv0dXrRHgon_aGdZqYxfu4";
+  print('index : $index');
+  try {
+    final response = await http.delete(
+      Uri.parse(
+        'http://localhost:3000/api/link/$index',
+      ),
+      headers: {
+        'Authorization': '$token',
+        'Content-Type': 'application/json',
+      },
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data['status'] == true) {
+        print('Success: Link berhasil dihapus');
+        Alert(
+          context: context,
+          type: AlertType.success,
+          title: "Link Berhasil dihapus",
+          desc: "Link yang Anda pilih telah berhasil dihapus",
+          buttons: [
+            DialogButton(
+              child: Text(
+                "Oke",
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); 
+              //  _getAllDataLinks();
+              }, 
+            ),
+          ],
+        ).show();
+      } else {
+        print('Failed to delete link: ${data['message']}');
+      }
+    } else {
+      print('Failed to get links: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Erorr cant get data : $e');
+  }
+}
+
 
   void _logout() async {
     await SharedPreferencesHelper.removeData('name');
@@ -332,8 +383,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         () => _archiveLink(index)),
                   _buildIconButton(
                       Icons.edit, Colors.blue, () => _editLink(index)),
-                  _buildIconButton(
-                      Icons.delete, Colors.red, () => _deletedLink(index)),
+                  _buildIconButton(Icons.delete, Colors.red,
+                      () => _deletedLink(context, index)),
                 ],
               ),
             ],
@@ -381,85 +432,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-Future<void> _deletedLink(int index) async {
-  String token =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiNTAwYjllY2ItYTEzOC00ZjI4LThhOWQtZGRiMjk4NDE1NTYxIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY2NjMyOTV9.dwubiSmTms0fbX2THbgZvUv0dXrRHgon_aGdZqYxfu4";
-  print('index : $index');
-  try {
-    final response = await http.delete(
-      Uri.parse(
-        'http://localhost:3000/api/link/$index',
-      ),
-      headers: {
-        'Authorization': '$token',
-        'Content-Type': 'application/json',
-      },
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      if (data['status'] == true) {
-        // Extract the 'response' field from the decoded JSON
-        print('Deleted link: ${data['message']}');
-        print('Deleted link: ${data['response']}');
-        // setState((){
-        //   _getAllDataLinks();
-        // });
-      } else {
-        print('Failed to get links: ${data['message']}');
-      }
-    } else {
-      print('Failed to get links: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('Erorr cant get data : $e');
-  }
-}
-
-void _deleteLink(int index, {required bool isArchived}) async {
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  // if (index < 0 ||
-  //     index >= (_viewArchived ? _archivedLinks.length : _links.length)) {
-  //   // Index is out of bounds, handle the error
-  //   print('Invalid index $index');
-  //   return;
-  // }
-
-  // // Determine the ID and remove from the appropriate list
-  // String id;
-  // if (isArchived) {
-  //   id = _getIdFromLink(_archivedLinks[index]['link']!);
-  //   _archivedLinks.removeAt(index);
-  // } else {
-  //   id = _getIdFromLink(_links[index]['link']!);
-  //   _links.removeAt(index);
-  // }
-
-  // // Remove the link from SharedPreferences
-  // prefs.remove('title_$id');
-  // prefs.remove('link_$id');
-  // prefs.remove('archived_$id');
-
-  // setState(() {
-  //   _filterLinks();
-  //   _saveLinksToSharedPreferences();
-  // });
-}
-
 Future<void> loadLinksFromSharedPreferences() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  // Get all keys from SharedPreferences
   Set<String> keys = prefs.getKeys();
 
   List<Map<String, String>> loadedLinks = [];
   List<Map<String, String>> loadedArchivedLinks = [];
 
-  // Loop through keys to find matching key (title_, link_, archived_)
   for (String key in keys) {
     if (key.startsWith('title_')) {
-      String id = key.replaceFirst('title_', ''); // Extract ID from key
+      String id = key.replaceFirst('title_', '');
       String? title = prefs.getString('title_$id');
       String? link = prefs.getString('link_$id');
       bool? isArchived = prefs.getBool('archived_$id') ?? false;
@@ -494,71 +477,15 @@ Future<void> _saveLinksToSharedPreferences() async {
       prefs.remove('archived_$id');
     }
   }
-
-  // // Save the current links
-  // for (int i = 0; i < _links.length; i++) {
-  //   String id = _getIdFromLink(_links[i]['link']!);
-  //   prefs.setString('title_$id', _links[i]['title']!);
-  //   prefs.setString('link_$id', _links[i]['link']!);
-  //   prefs.setBool('archived_$id', false);
-  // }
-
-  // for (int i = 0; i < _archivedLinks.length; i++) {
-  //   String id = _getIdFromLink(_archivedLinks[i]['link']!);
-  //   prefs.setString('title_$id', _archivedLinks[i]['title']!);
-  //   prefs.setString('link_$id', _archivedLinks[i]['link']!);
-  //   prefs.setBool('archived_$id', true);
-  // }
 }
 
 void _archiveLink(int index) async {
-  // Get the actual index of the link in the _links list based on the filtered list
-  // Map<String, String> linkToArchive =
-  //     _filteredLinks[index]; // Get the link data from the filtered list
-  // int originalIndex = _links.indexWhere((link) =>
-  //     link['link'] == linkToArchive['link']); // Find the index in _links
-
-  // if (originalIndex < 0 || originalIndex >= _links.length) return;
-
-  // String id = _getIdFromLink(_links[originalIndex]['link']!);
-
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-  // await prefs.setBool('archived_$id', true);
-
-  // setState(() {
-  //   // Move the link to the archived list and remove from the main list
-  //   _archivedLinks.add(_links[originalIndex]);
-  //   _links.removeAt(originalIndex);
-  //   _filterLinks(); // Refresh the filtered list
-  // });
-
   await _saveLinksToSharedPreferences();
 
   _showFeedback('Link archived successfully');
 }
 
 void _unarchiveLink(int index) async {
-  // // Get the actual index of the link in the _archivedLinks list based on the filtered list
-  // Map<String, String> linkToUnarchive =
-  //     _filteredLinks[index]; // Get the link data from the filtered list
-  // int originalIndex = _archivedLinks.indexWhere((link) =>
-  //     link['link'] ==
-  //     linkToUnarchive['link']); // Find the index in _archivedLinks
-
-  // if (originalIndex < 0 || originalIndex >= _archivedLinks.length) return;
-
-  // String id = _getIdFromLink(_archivedLinks[originalIndex]['link']!);
-
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-  // await prefs.setBool('archived_$id', false);
-
-  // setState(() {
-  //   // Move the link to the main list and remove from the archived list
-  //   _links.add(_archivedLinks[originalIndex]);
-  //   _archivedLinks.removeAt(originalIndex);
-  //   _filterLinks(); // Refresh the filtered list
-  // });
-
   await _saveLinksToSharedPreferences();
 }
 
