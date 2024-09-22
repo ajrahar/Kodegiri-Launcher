@@ -18,23 +18,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, String>> _links = [];
-  List<Map<String, String>> _filteredLinks = [];
-  List<Map<String, String>> _archivedLinks = [];
   TextEditingController _searchController = TextEditingController();
   bool _viewArchived = false;
 
   String adminName = '';
   String adminEmail = '';
+  String userToken = '';
   List _datalink = [];
 
   @override
   void initState() {
-    super.initState();
-    // _searchController.addListener(_filterLinks);
-    // loadLinksFromSharedPreferences();
     _loadProfile();
     _getAllDataLinks();
+    super.initState();
+    // _searchController.addListener(_filterLinks);
   }
 
   @override
@@ -49,19 +46,18 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       adminName = prefs.getString('name') ?? 'tidak ada nama';
       adminEmail = prefs.getString('email') ?? 'tidak ada email';
+      userToken = prefs.getString('token') ?? 'tidak ada token';
     });
   }
 
   Future<void> _getAllDataLinks() async {
-    String token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiOGQ5ZjRlNmItNTAyMi00YWY0LTljODQtNWM3OThkOGEyYjc4IiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY3MTk1MjN9.HWx1jEcPwIKXiSpTbyZuL6mcehtg8yYdMnPwqZp-e_g";
     try {
       final response = await http.get(
         Uri.parse(
           'http://localhost:3000/api/links',
         ),
         headers: {
-          'Authorization': '$token',
+          'Authorization': '$userToken',
           'Content-Type': 'application/json',
         },
       );
@@ -77,85 +73,75 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _datalink = links;
           });
-          print('data : $links');
+          // print('data : $links');
         } else {
-          print('Failed to get links: ${data['message']}');
+          print('Failed to get links : ${data['message']}');
+          _showFeedback(context, 'Failed to get links : ${data['message']}');
         }
       } else {
-        print('Failed to get links: ${response.statusCode}');
+        print('Failed to get links : ${response.statusCode}');
+        _showFeedback(context, 'Failed to get links : ${response.statusCode}');
       }
     } catch (e) {
       print('Erorr cant get data : $e');
+      _showFeedback(context, 'Erorr cant get data : ${e}');
     }
   }
 
-  Future<void> _patchLink(int index, Map<String, String> updatedData) async {
+  Future<void> _deletedLink(BuildContext context, int index) async {
     try {
-      final response = await http.patch(
-        Uri.parse('http://localhost:3000/api/link'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(updatedData),
+      final response = await http.delete(
+        Uri.parse(
+          'http://localhost:3000/api/link/$index',
+        ),
+        headers: {
+          'Authorization': '$userToken',
+          'Content-Type': 'application/json',
+        },
       );
-
       if (response.statusCode == 200) {
-        print('Data updated successfully');
+        final data = jsonDecode(response.body);
+
+        if (data['status'] == true) {
+          print('Deleted link: ${data['message']}');
+          _showFeedback(context, 'Deleted link: ${data['message']}');
+        } else {
+          print('Failed deleted : ${data['message']}');
+          _showFeedback(context, 'Failed deleted : ${data['message']}');
+        }
       } else {
-        print('Failed to update data');
+        print('Error code : ${response.statusCode}');
+        _showFeedback(context, 'Failed deleted : ${response.statusCode}');
       }
     } catch (e) {
-      print('Error occurred: $e');
+      print('Erorr cant delete data : $e');
+      _showFeedback(context, 'Erorr cant delete data : ${e}');
     }
   }
 
-  
-Future<void> _deletedLink(BuildContext context, int index) async {
-  String token =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiNTAwYjllY2ItYTEzOC00ZjI4LThhOWQtZGRiMjk4NDE1NTYxIiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY2NjMyOTV9.dwubiSmTms0fbX2THbgZvUv0dXrRHgon_aGdZqYxfu4";
-  print('index : $index');
-  try {
-    final response = await http.delete(
-      Uri.parse(
-        'http://localhost:3000/api/link/$index',
+  void _confirmAndDeleteLink(int index, context) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete this link?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => {
+              _deletedLink(context, index),
+              Navigator.pop(context),
+              _getAllDataLinks()
+            },
+            child: const Text('Delete'),
+          ),
+        ],
       ),
-      headers: {
-        'Authorization': '$token',
-        'Content-Type': 'application/json',
-      },
     );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      if (data['status'] == true) {
-        print('Success: Link berhasil dihapus');
-        Alert(
-          context: context,
-          type: AlertType.success,
-          title: "Link Berhasil dihapus",
-          desc: "Link yang Anda pilih telah berhasil dihapus",
-          buttons: [
-            DialogButton(
-              child: Text(
-                "Oke",
-                style: TextStyle(color: Colors.white, fontSize: 14),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop(); 
-              //  _getAllDataLinks();
-              }, 
-            ),
-          ],
-        ).show();
-      } else {
-        print('Failed to delete link: ${data['message']}');
-      }
-    } else {
-      print('Failed to get links: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('Erorr cant get data : $e');
   }
-}
-
 
   void _logout() async {
     await SharedPreferencesHelper.removeData('name');
@@ -179,7 +165,8 @@ Future<void> _deletedLink(BuildContext context, int index) async {
         actions: [
           IconButton(
             icon: Icon(_viewArchived ? Icons.view_list : Icons.archive),
-            onPressed: _toggleViewArchived,
+            onPressed: () =>
+                _showFeedback(context, 'Fitur ini masih dalam proses'),
           ),
         ],
       ),
@@ -226,7 +213,9 @@ Future<void> _deletedLink(BuildContext context, int index) async {
                     ),
                     itemCount: _datalink.length,
                     itemBuilder: (context, index) {
-                      return _buildCard(_datalink[index], index + 1);
+                      final link = _datalink[index];
+                      final id = link['link_ID'];
+                      return _buildCard(_datalink[index], id);
                     },
                   ),
                 ),
@@ -238,19 +227,13 @@ Future<void> _deletedLink(BuildContext context, int index) async {
             right: 16.0,
             child: FloatingActionButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const WebLauncherHomePage(),
-                  ),
-                ).then((result) {
-                  _getAllDataLinks();
-                  if (result != null) {
-                    setState(() {
-                      _links = List<Map<String, String>>.from(result);
-                      // _filterLinks();
-                    });
-                  }
+                _getAllDataLinks().then((result) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const WebLauncherHomePage(),
+                    ),
+                  );
                 });
               },
               backgroundColor: Colors.white,
@@ -376,15 +359,21 @@ Future<void> _deletedLink(BuildContext context, int index) async {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (_viewArchived)
-                    _buildIconButton(Icons.unarchive, Colors.green,
-                        () => _unarchiveLink(index))
+                    _buildIconButton(
+                        Icons.unarchive,
+                        Colors.green,
+                        () => () => _showFeedback(
+                            context, 'Fitur ini masih dalam proses'))
                   else
-                    _buildIconButton(Icons.archive, Colors.orange,
-                        () => _archiveLink(index)),
+                    _buildIconButton(
+                        Icons.archive,
+                        Colors.orange,
+                        () => () => _showFeedback(
+                            context, 'Fitur ini masih dalam proses')),
                   _buildIconButton(
                       Icons.edit, Colors.blue, () => _editLink(index)),
                   _buildIconButton(Icons.delete, Colors.red,
-                      () => _deletedLink(context, index)),
+                      () => _confirmAndDeleteLink(index, context)),
                 ],
               ),
             ],
@@ -408,22 +397,69 @@ Future<void> _deletedLink(BuildContext context, int index) async {
     );
   }
 
-  void _editLink(int index) {
+  Future<void> _editLink(int index) async {
+    final linkData = _datalink.firstWhere(
+        (element) => element['link_ID'] == index,
+        orElse: () => null);
+
+    if (linkData == null) {
+      print('Link data not found for id: $index');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Link data not found for id: $index')),
+      );
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditScreen(
-          linkData: _datalink[index],
+          linkData: linkData,
           onSave: (updatedData) {
-            print('data edit :$updatedData');
-            setState(() {
-              // if (_viewArchived) {
-              //   _archivedLinks[index] = updatedData;
-              // } else {
-              //   _links[index] = updatedData;
-              // }
-              // _filterLinks();
-              // _saveLinksToSharedPreferences();
+            // print('data edit :$updatedData');
+            setState(() async {
+              try {
+                final response = await http.patch(
+                  Uri.parse('http://localhost:3000/api/link/$index'),
+                  headers: {
+                    'Authorization': '$userToken',
+                    'Content-Type': 'application/json',
+                  },
+                  body: jsonEncode(updatedData), // Data yang ingin diupdate
+                );
+
+                if (response.statusCode == 200) {
+                  final data = jsonDecode(response.body);
+
+                  if (data['status'] == true) {
+                    // print('Updated link : ${data['message']}');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Updated link: ${data['message']}')),
+                    );
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                    );
+                  } else {
+                    // print('Failed to update: ${data['message']}');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content:
+                              Text('Failed to update: ${data['message']}')),
+                    );
+                  }
+                } else {
+                  // print('Error code: ${response.statusCode}');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('Error code: ${response.statusCode}')),
+                  );
+                }
+              } catch (e) {
+                // print('Error: cannot update data: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error: $e')),
+                );
+              }
             });
           },
         ),
@@ -431,122 +467,6 @@ Future<void> _deletedLink(BuildContext context, int index) async {
     );
   }
 }
-
-Future<void> loadLinksFromSharedPreferences() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  Set<String> keys = prefs.getKeys();
-
-  List<Map<String, String>> loadedLinks = [];
-  List<Map<String, String>> loadedArchivedLinks = [];
-
-  for (String key in keys) {
-    if (key.startsWith('title_')) {
-      String id = key.replaceFirst('title_', '');
-      String? title = prefs.getString('title_$id');
-      String? link = prefs.getString('link_$id');
-      bool? isArchived = prefs.getBool('archived_$id') ?? false;
-
-      if (title != null && link != null) {
-        if (isArchived) {
-          loadedArchivedLinks.add({'title': title, 'link': link});
-        } else {
-          loadedLinks.add({'title': title, 'link': link});
-        }
-      }
-    }
-  }
-
-  // setState(() {
-  //   _links = loadedLinks;
-  //   _archivedLinks = loadedArchivedLinks;
-  //   _filterLinks();
-  // });
-}
-
-Future<void> _saveLinksToSharedPreferences() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  // Remove all previous data
-  Set<String> keys = prefs.getKeys();
-  for (String key in keys) {
-    if (key.startsWith('title_')) {
-      String id = key.replaceFirst('title_', '');
-      prefs.remove('title_$id');
-      prefs.remove('link_$id');
-      prefs.remove('archived_$id');
-    }
-  }
-}
-
-void _archiveLink(int index) async {
-  await _saveLinksToSharedPreferences();
-
-  _showFeedback('Link archived successfully');
-}
-
-void _unarchiveLink(int index) async {
-  await _saveLinksToSharedPreferences();
-}
-
-void _confirmAndDeleteLink(int index, context) async {
-  // final link = _links[index];
-
-  // showDialog(
-  //   context: context,
-  //   builder: (context) => AlertDialog(
-  //     title: const Text('Confirm Delete'),
-  //     content: const Text('Are you sure you want to delete this link?'),
-  //     actions: [
-  //       TextButton(
-  //         onPressed: () => Navigator.pop(context),
-  //         child: const Text('Cancel'),
-  //       ),
-  //       TextButton(
-  //         onPressed: () async {
-  //           Navigator.pop(context);
-  //           final response = await http.delete(
-  //             Uri.parse('http://localhost:3000/api/link/${link}'),
-  //             headers: {'Content-Type': 'application/json'},
-  //           );
-  //           if (response.statusCode == 200) {
-  //             // _getAllDataLinks();
-  //           } else {
-  //             print('Failed to delete link');
-  //           }
-  //         },
-  //         child: const Text('Delete'),
-  //       ),
-  //     ],
-  //   ),
-  // );
-}
-
-void _toggleViewArchived() {
-  // setState(() {
-  //   _viewArchived = !_viewArchived;
-  //   _filterLinks();
-  // });
-}
-
-// void _filterLinks() {
-//   String searchTerm = _searchController.text.toLowerCase();
-//   setState(() {
-//     if (_viewArchived) {
-//       _filteredLinks = _archivedLinks
-//           .where((link) =>
-//               link['title']!.toLowerCase().contains(searchTerm) ||
-//               link['url']!.toLowerCase().contains(searchTerm))
-//           .toList();
-//     } else {
-//       _filteredLinks = _links
-//           .where((link) =>
-//               link['title']!.toLowerCase().contains(searchTerm) ||
-//               link['url']!.toLowerCase().contains(searchTerm))
-//           .toList();
-//     }
-//   });
-// }
 
 Future<void> _launchLink(String url) async {
   Uri uri;
@@ -564,17 +484,13 @@ Future<void> _launchLink(String url) async {
   }
 }
 
-String _getIdFromLink(String link) {
-  return link;
-}
-
-void _showFeedback(String message) {
-  // ScaffoldMessenger.of(context).showSnackBar(
-  //   SnackBar(
-  //     content: Text(message),
-  //     duration: const Duration(seconds: 2),
-  //   ),
-  // );
+void _showFeedback(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 2),
+    ),
+  );
 }
 
 class EditScreen extends StatelessWidget {
@@ -611,7 +527,7 @@ class EditScreen extends StatelessWidget {
               onPressed: () {
                 onSave({
                   'title': titleController.text,
-                  'link': linkController.text,
+                  'url': linkController.text,
                 });
                 Navigator.of(context).pop();
               },

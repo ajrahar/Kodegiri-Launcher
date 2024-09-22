@@ -5,7 +5,7 @@ const { middleware } = require('../middlewares/jsonwebtoken.js')
 router.get("/links",
      /* 	#swagger.tags = ['Link']
      #swagger.description = 'Endpoint to get all link' */
-     middleware, getAllLinks
+     getAllLinks
 );
 router.get("/link/:link_ID",
      /* 	#swagger.tags = ['Link']
@@ -17,7 +17,7 @@ router.get("/link/:link_ID",
         required: true,
         schema: { $ref: "#/definitions/isAdmin" }
      } */
-     middleware, getLinksById
+     getLinksById
 );
 
 router.post("/links",
@@ -30,7 +30,7 @@ router.post("/links",
              required: true,
              schema: { $ref: "#/definitions/AddLink" }
      } */
-     middleware, createLinks
+     createLinks
 );
 router.patch("/link/:link_ID",
      /* 	#swagger.tags = ['Link']
@@ -42,12 +42,12 @@ router.patch("/link/:link_ID",
         required: true,
         schema: { $ref: "#/definitions/UpdateLink" }
 } */
-     middleware, UpdateLinks
+     UpdateLinks
 );
 router.delete("/link/:link_ID",
      /* 	#swagger.tags = ['Link']
      #swagger.description = 'Endpoint to delete a link based ID' */
-     middleware, DeleteLinks
+     DeleteLinks
 );
 
 module.exports = router

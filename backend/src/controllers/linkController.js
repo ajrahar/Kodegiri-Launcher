@@ -38,7 +38,7 @@ const getLinksById = async (req, res) => {
 const createLinks = async (req, res) => {
      try {
           await models.Link.create(req.body);
-          res.status(201).json({status: true, success: "Link data created successfully", response : req.body });
+          res.status(201).json({ status: true, message: "Link data created successfully", response : req.body });
      } catch (error) {
           console.log("Cannot create new link : \n", error.message);
           res.status(500).json({ status: false, message: "Cannot create new link", response: error.message });

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
+import 'package:Kodegiri/admin_screens/home_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 import 'dart:convert';
@@ -18,15 +20,15 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
   int? _editingIndex;
+  String token = '';
 
   void _saveLink() async {
     if (_formKey.currentState!.validate()) {
       final title = _titleController.text; 
       final url = _linkController.text;
-      String token =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX0lEIjoiOGQ5ZjRlNmItNTAyMi00YWY0LTljODQtNWM3OThkOGEyYjc4IiwibmFtZSI6IkFkbWluIiwiZW1haWwiOiJhZG1pbkBnbWFpbC5jb20iLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MjY3MTk1MjN9.HWx1jEcPwIKXiSpTbyZuL6mcehtg8yYdMnPwqZp-e_g";
-
-      final Map<String, dynamic> linkData = {"title": title, "url": url};
+      token =
+          await SharedPreferencesHelper.getString('token') ?? 'token tidak ada';
+      final Map<String, dynamic> linkData = {"user_ID": null, "title": title, "url": url};
 
       try {
         final response = await http.post(
@@ -38,18 +40,33 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
           body: jsonEncode(linkData),
         );
         if (response.statusCode == 201) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Link Berhasil ditambahkan')),
-          );
-          
-         Navigator.pop(context, _links);
+          final data = jsonDecode(response.body);
 
+          if (data['status'] == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Link created : ${data['message']} ')),
+            );
+            print('Link created : ${data['message']}');
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Link Gagal ditambahkan ${data['message']}')),
+            );
+            print('Link Gagal ditambahkan : ${data['message']}');
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Link Gagal ditambahkan')),
+          ScaffoldMessenger.of(context).showSnackBar( 
+            SnackBar(content: Text('Error satatus code ${response.statusCode}')),
           );
-        }
+          print('Failed to get links: ${response.statusCode}');
+        }  
       } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Link Gagal ditambahkan ${error}')),
+        ); 
         print('Terjadi kesalahan: $error');
       }
     }
