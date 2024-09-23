@@ -39,9 +39,6 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
       userToken =
           await SharedPreferencesHelper.getString('token') ?? 'token tidak ada';
     });
-    // setState(() {
-    //   userToken = prefs.getString('token') ?? 'tidak ada token';
-    // });
   }
 
   Future<void> _getAllDataAccount() async {
@@ -61,10 +58,12 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
         final data = jsonDecode(response.body);
 
         if (data['status']) {
-          final List<Map<String, dynamic>> dataAccountList = data['response'];
+          final List<dynamic> dataAccountList = data['response'];
 
           setState(() {
-            _dataAccounts = dataAccountList;
+            _dataAccounts = dataAccountList
+                .map((account) => account as Map<String, dynamic>)
+                .toList();
           });
         } else {
           print('Failed to get links : ${data['message']}');
@@ -111,10 +110,64 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
     );
   }
 
-  void _deleteAccount(int index) {
-    setState(() {
-      _dataAccounts.removeAt(index);
-    });
+Future<void> _deletedAccount(BuildContext context, int index) async {
+  final userId = _dataAccounts[index]['user_ID']; // Get the user ID
+
+  try {
+    final response = await http.delete(
+      Uri.parse(
+        'http://localhost:3000/api/user/$userId', // Use user ID here
+      ),
+      headers: {
+        'Authorization': '$userToken', // Include the authorization token
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data['status'] == true) {
+        print('Deleted Account: ${data['message']}');
+        _showFeedback(context, 'Deleted link: ${data['message']}');
+        _getAllDataAccount();
+      } else {
+        print('Failed to delete: ${data['message']}');
+        _showFeedback(context, 'Failed to delete: ${data['message']}');
+      }
+    } else {
+      print('Error code: ${response.statusCode}');
+      _showFeedback(context, 'Failed to delete: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error while deleting data: $e');
+    _showFeedback(context, 'Error while deleting data: $e');
+  }
+}
+
+
+  void _confirmAndDeleteAccount(int index, context) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete this account'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => {
+              _deletedAccount(context, index),
+              Navigator.pop(context),
+              _getAllDataAccount()
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -168,7 +221,7 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
                           if (value == 'edit') {
                             _editAccount(index);
                           } else if (value == 'delete') {
-                            _deleteAccount(index);
+                            _confirmAndDeleteAccount(index, context);
                           }
                         },
                         itemBuilder: (BuildContext context) =>
@@ -190,6 +243,8 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
                                   color: const Color.fromARGB(255, 25, 47, 84)),
                               title: const Text('Delete',
                                   style: TextStyle(color: Colors.black)),
+                              onTap: () =>
+                                  _confirmAndDeleteAccount(index, context),
                             ),
                             textStyle: const TextStyle(color: Colors.black),
                           ),

@@ -2,7 +2,6 @@ import 'package:Kodegiri/admin_screens/edit_profile_screen.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 import 'package:Kodegiri/universal_screen/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'add_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,16 +59,14 @@ class _HomeScreenState extends State<HomeScreen> {
           'Authorization': '$userToken',
           'Content-Type': 'application/json',
         },
-      );
-      // print('response : ${response.body}');
+      );      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         if (data['status']) {
-          // Extract the 'response' field from the decoded JSON
+          
           final List<dynamic> links = data['response'];
-
-          // Ensure that links are correctly processed
+        
           setState(() {
             _datalink = links;
           });
