@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Import the provider package
 import 'package:url_launcher/url_launcher.dart';
 import 'package:Kodegiri/universal_screen/link_provider.dart';
-// Import your LinkProvider
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -12,10 +16,79 @@ class SalesScreen extends StatefulWidget {
 }
 
 class _SalesScreenState extends State<SalesScreen> {
+  List _datalink = [];
+  String userToken = '';
+
   @override
   void initState() {
+    _loadProfileAndGetData();
     super.initState();
     // You can initialize or fetch data here if needed
+  }
+    Future<void> _loadProfileAndGetData() async {
+    // Tunggu hingga profile dimuat terlebih dahulu
+    await _loadProfile();
+
+    // Setelah token di-load, baru lanjutkan dengan mengambil data link
+    if (userToken.isNotEmpty) {
+      _getAllDataLinks();
+    } else {
+      print('Token is empty, cannot fetch data');
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    // setState(() async { 
+    userToken =
+        await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
+    // });
+  }
+
+  Future<void> _getAllDataLinks() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:3000/api/links',
+        ),
+        headers: {
+          HttpHeaders.authorizationHeader: '$userToken',
+          HttpHeaders.acceptHeader: 'application/json',
+        },
+      );
+      // print('response : ${response.body}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['status']) {
+          // Extract the 'response' field from the decoded JSON
+          final List<dynamic> links = data['response'];
+
+          // Ensure that links are correctly processed
+          setState(() {
+            _datalink = links;
+          });
+          // print('data : $links');
+        } else {
+          print('Failed to get links : ${data['message']}');
+          _showFeedback(context, 'Failed to get links : ${data['message']}');
+        }
+      } else {
+        print('Failed to get links : ${response.statusCode}');
+        _showFeedback(context, 'Failed to get links : ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erorr cant get data : $e');
+      _showFeedback(context, 'Erorr cant get data : ${e}');
+    }
+  }
+
+  void _showFeedback(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _logout() {
