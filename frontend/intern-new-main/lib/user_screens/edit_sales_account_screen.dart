@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class EditSalesAccountScreen extends StatefulWidget {
-  final Map<String, String> account;
-  final Function(Map<String, String>) onSave;
+ final Map<String, dynamic> account; 
+  final Function(Map<String, dynamic>) onSave;
 
   const EditSalesAccountScreen(
       {super.key, required this.account, required this.onSave});
