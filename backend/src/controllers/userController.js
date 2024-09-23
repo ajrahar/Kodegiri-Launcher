@@ -5,7 +5,11 @@ const bcrypt = require('bcrypt');
 // Get all users
 const getAllUsers = async (req, res) => {
      try {
-          const response = await models.User.findAll();
+          const response = await models.User.findAll({
+               where:{
+                    isAdmin :false
+               }
+          });
           if (response.length === 0) {
                return res.status(404).json({ status: false, message: "User data not found" });
           }
@@ -44,7 +48,7 @@ const createUsers = async (req, res) => {
                name: name,
                email: email,
                password: hashedPassword,
-               isAdmin:isAdmin
+               isAdmin: 0
           }
           await models.User.create(data);
           res.status(201).json({status: true, message: "User data created successfully", response : req.body });

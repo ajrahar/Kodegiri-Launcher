@@ -17,14 +17,17 @@ exports.middleware = async (req, res, next) => {
      // const decode = jsonwebtoken.verify(token, jwtToken)
      // req.uid = decode.uid
      // next()
-     const authHeader = req.header('Authorization');
+     const authHeader = req.header('Authorization');   
 
+     console.log('user hedaer '+authHeader );
      if (!authHeader) {
           return res.status(401).json({
                status: false,
-               message: "Access denied. No token provided. Please log in to continue."
+               message: "Access denied. No token provided. Please log in to continue.",
+               reponse : authHeader
           })
      }
+     const token = authHeader.split(' ')[1];
 
      try {
           const decode = jsonwebtoken.verify(authHeader, jwtToken);

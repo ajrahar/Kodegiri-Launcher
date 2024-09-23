@@ -5,12 +5,12 @@ const { middleware } = require('../middlewares/jsonwebtoken.js')
 router.get("/users",
      /* 	#swagger.tags = ['User']
      #swagger.description = 'Endpoint to get all user' */
-     middleware, getAllUsers
+     getAllUsers
 );
 router.get("/user/:user_ID",
      /* 	#swagger.tags = ['User']
      #swagger.description = 'Endpoint to get a user based ID' */
-     middleware, getUsersById
+     getUsersById
 );
 
 router.post("/user",
@@ -23,7 +23,7 @@ router.post("/user",
              required: true,
              schema: { $ref: "#/definitions/AddUser" }
      } */
-     middleware, createUsers
+     createUsers
 );
 router.patch("/user/:user_ID",
      /* 	#swagger.tags = ['User']
@@ -35,18 +35,18 @@ router.patch("/user/:user_ID",
         required: true,
         schema: { $ref: "#/definitions/UpdateUser" }
 } */
-     middleware, UpdateUsers
+     UpdateUsers
 );
 router.delete("/user/:user_ID",
      /* 	#swagger.tags = ['User']
      #swagger.description = 'Endpoint to delete a user based ID' */
-     middleware, DeleteUsers
+     DeleteUsers
 );
 
 router.get("/user/:email",
      /* 	#swagger.tags = ['User']
      #swagger.description = 'Endpoint to get a user based ID' */
-     middleware, getUsersByEmail
+     getUsersByEmail
 )
 
 module.exports = router
