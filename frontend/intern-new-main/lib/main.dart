@@ -1,3 +1,4 @@
+import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,7 +27,8 @@ class MyApp extends StatelessWidget {
       home: SplashScreen(), 
       routes: {
         '/home': (context) => HomeScreen(),
-        '/login': (context) => LoginScreen(),        
+        '/login': (context) => LoginScreen(), 
+        '/manage-sales-account' : (context) => SalesAccountScreen(),       
       },
       debugShowCheckedModeBanner: false, 
     );

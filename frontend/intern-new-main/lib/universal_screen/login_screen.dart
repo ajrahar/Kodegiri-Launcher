@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:Kodegiri/admin_screens/home_screen.dart'; 
-import 'package:Kodegiri/user_screens/uhome_screen.dart'; 
+import 'package:Kodegiri/admin_screens/home_screen.dart';
+import 'package:Kodegiri/user_screens/uhome_screen.dart';
 import 'package:rflutter_alert/rflutter_alert.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:http/http.dart' as http;
@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(color: Colors.white, fontSize: 14),
             ),
             onPressed: () {
-              Navigator.of(context).pop();             
+              Navigator.of(context).pop();
               if (isAdmin) {
                 Navigator.pushReplacement(
                   context,
@@ -79,7 +79,8 @@ class _LoginScreenState extends State<LoginScreen> {
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         bool isAdmin = decodedToken['isAdmin'] == true;
         await SharedPreferencesHelper.saveString('name', decodedToken['name']);
-        await SharedPreferencesHelper.saveString('email', decodedToken['email']);
+        await SharedPreferencesHelper.saveString(
+            'email', decodedToken['email']);
         await SharedPreferencesHelper.saveString('token', token);
         _sweatAlert(context, isAdmin);
       } else {
@@ -132,10 +133,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextField(
                         controller: _usernameController,
                         decoration: InputDecoration(
-                          labelText: 'Username',
-                          border: OutlineInputBorder(),
+                          labelText: 'Email',
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                           labelStyle: TextStyle(
                               color: const Color.fromARGB(255, 35, 61, 105)),
+                              suffixIcon: Icon(Icons.email, color: const Color.fromARGB(255, 25, 47, 84) ,)
                         ),
                       ),
                       SizedBox(height: 16),
@@ -144,7 +147,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          border: OutlineInputBorder(),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                           labelStyle: TextStyle(
                               color: const Color.fromARGB(255, 23, 37, 61)),
                           suffixIcon: IconButton(
@@ -159,17 +163,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _login,
-                        child: Text('Login'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromARGB(255, 29, 44, 69),
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 50, vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
+                      SizedBox(
+                        width:
+                            double.infinity, // Button width same as TextFields
+                        child: ElevatedButton(
+                          onPressed: _login,
+                          child: Text('Login'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 29, 44, 69),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 50, vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
