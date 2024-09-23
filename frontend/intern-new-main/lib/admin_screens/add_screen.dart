@@ -19,16 +19,22 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
-  int? _editingIndex;
   String token = '';
+
+  bool _isTitleValid = true;
+  bool _isLinkValid = true;
 
   void _saveLink() async {
     if (_formKey.currentState!.validate()) {
-      final title = _titleController.text; 
+      final title = _titleController.text;
       final url = _linkController.text;
       token =
           await SharedPreferencesHelper.getString('token') ?? 'token tidak ada';
-      final Map<String, dynamic> linkData = {"user_ID": null, "title": title, "url": url};
+      final Map<String, dynamic> linkData = {
+        "user_ID": null,
+        "title": title,
+        "url": url
+      };
 
       try {
         final response = await http.post(
@@ -53,165 +59,161 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Link Gagal ditambahkan ${data['message']}')),
+              SnackBar(
+                  content: Text('Link Gagal ditambahkan ${data['message']}')),
             );
             print('Link Gagal ditambahkan : ${data['message']}');
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar( 
-            SnackBar(content: Text('Error satatus code ${response.statusCode}')),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Error satatus code ${response.statusCode}')),
           );
           print('Failed to get links: ${response.statusCode}');
-        }  
+        }
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Link Gagal ditambahkan ${error}')),
-        ); 
+        );
         print('Terjadi kesalahan: $error');
       }
     }
   }
 
+  String? _validateField(String value, String field) {
+    if (value.isEmpty) {
+      setState(() {
+        if (field == 'title') _isTitleValid = false;
+        if (field == 'link') _isLinkValid = false;
+      });
+      return '$field should not be empty';
+    }
+    setState(() {
+      if (field == 'title') _isTitleValid = true;
+      if (field == 'link') _isLinkValid = true;
+    });
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFF9F9F9),
       appBar: AppBar(
-        title: const Text(
-          'Add New Link',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF0F172A),
-        leading: _editingIndex != null
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: _cancelEdit,
-              )
-            : null,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+        foregroundColor: Colors.white,
+        title: const Text('Add New Link'),
+        leading: IconButton(
+            onPressed: () {
+              Navigator.pushReplacementNamed(context, '/home');
+            },
+            icon: const Icon(Icons.arrow_back)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Title'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a title';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _linkController,
-                    decoration: const InputDecoration(labelText: 'Link'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a link';
-                      } else if (!value.contains('.')) {
-                        return 'Please enter a valid link with a "."';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _saveLink,
-                    child: Text(
-                        _editingIndex == null ? 'Add Link' : 'Update Link'),
-                  ),
-                ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Title',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _links.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(_links[index]['title']!),
-                    subtitle: Text(_links[index]['link']!),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () => _editLink(index),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () => _deleteLink(index),
-                        ),
-                      ],
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Enter the title',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _isTitleValid ? Colors.grey : Colors.red,
                     ),
-                    onTap: () => _launchLink(_links[index]['link']!),
-                  );
-                },
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.grey),
+                  ),
+                ),
+                validator: (value) => _validateField(value ?? '', 'name'),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              const Text(
+                'Link',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _linkController,
+                decoration: InputDecoration(
+                  hintText: 'Enter Link',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _isLinkValid ? Colors.grey : Colors.red,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.grey),
+                  ),
+                ),
+                validator: (value) => _validateField(value ?? '', 'Link'),
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saveLink,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Save', style: TextStyle(fontSize: 18)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  void _editLink(int index) {
-    setState(() {
-      _titleController.text = _links[index]['title']!;
-      _linkController.text = _links[index]['link']!;
-      _editingIndex = index;
-    });
+Future<void> _launchLink(String url) async {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://$url';
   }
 
-  void _deleteLink(int index) {
-    setState(() {
-      _links.removeAt(index);
-    });
+  Uri uri = Uri.parse(url);
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri);
+  } else {
+    throw 'Could not launch $url';
   }
+}
 
-  Future<void> _launchLink(String url) async {
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://$url';
-    }
+Future<void> _saveTitleToSharedPreferences(
+    String id, String title, String link) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  // Menyimpan title dan link dengan key unik
+  await prefs.setString('title_$id', title);
+  await prefs.setString('link_$id', link);
+}
 
-    Uri uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
+String generateUniqueId() {
+  const String chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  Random random = Random();
 
-  void _cancelEdit() {
-    setState(() {
-      _editingIndex = null;
-      _titleController.clear();
-      _linkController.clear();
-    });
-  }
+  // Generate a 6-character string from the chars list
+  String id =
+      List.generate(6, (index) => chars[random.nextInt(chars.length)]).join('');
 
-  Future<void> _saveTitleToSharedPreferences(
-      String id, String title, String link) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    // Menyimpan title dan link dengan key unik
-    await prefs.setString('title_$id', title);
-    await prefs.setString('link_$id', link);
-  }
-
-  String generateUniqueId() {
-    const String chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    Random random = Random();
-
-    // Generate a 6-character string from the chars list
-    String id = List.generate(6, (index) => chars[random.nextInt(chars.length)])
-        .join('');
-
-    return id;
-  }
+  return id;
 }
