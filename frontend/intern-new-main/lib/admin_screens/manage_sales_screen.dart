@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:Kodegiri/universal_screen/shared_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Kodegiri/user_screens/add_sales_account_screen.dart';
 import 'package:Kodegiri/user_screens/edit_sales_account_screen.dart';
 
@@ -111,15 +110,15 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
   }
 
 Future<void> _deletedAccount(BuildContext context, int index) async {
-  final userId = _dataAccounts[index]['user_ID']; // Get the user ID
+  final userId = _dataAccounts[index]['user_ID']; 
 
   try {
     final response = await http.delete(
       Uri.parse(
-        'http://localhost:3000/api/user/$userId', // Use user ID here
+        'http://localhost:3000/api/user/$userId', 
       ),
       headers: {
-        'Authorization': '$userToken', // Include the authorization token
+        'Authorization': '$userToken', 
         'Content-Type': 'application/json',
       },
     );
