@@ -94,10 +94,13 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
   }
 
   void _editAccount(int index) {
+    var userID = _dataAccounts[index]['user_ID'];
+    // _showFeedback(context, 'Deleted link: ${userID}');
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditSalesAccountScreen(
+          user_ID :userID,
           account: _dataAccounts[index],
           onSave: (updatedAccount) {
             setState(() {

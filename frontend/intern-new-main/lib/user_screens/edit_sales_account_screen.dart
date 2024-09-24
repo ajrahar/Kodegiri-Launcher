@@ -13,11 +13,12 @@ void _showFeedback(BuildContext context, String message) {
 }
 
 class EditSalesAccountScreen extends StatefulWidget {
+  final String user_ID;
   final Map<String, dynamic> account;
   final Function(Map<String, dynamic>) onSave;
 
   const EditSalesAccountScreen(
-      {super.key, required this.account, required this.onSave});
+      {super.key,required this.user_ID, required this.account, required this.onSave});
 
   @override
   State<EditSalesAccountScreen> createState() => _EditSalesAccountScreenState();
@@ -39,13 +40,12 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
     super.initState();
   }
 
-  Future<void> _getAccount(BuildContext context) async {
-    final userId = widget.account['user_ID'];
+  Future<void> _getAccount(BuildContext context) async { 
 
     try {
       final response = await http.get(
         Uri.parse(
-          'http://localhost:3000/api/user/$userId',
+          'http://localhost:3000/api/user/${widget.user_ID}',
         ),
         headers: {
           'Content-Type': 'application/json',

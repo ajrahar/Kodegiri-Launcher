@@ -25,7 +25,8 @@ class _SalesScreenState extends State<SalesScreen> {
     super.initState();
     // You can initialize or fetch data here if needed
   }
-    Future<void> _loadProfileAndGetData() async {
+
+  Future<void> _loadProfileAndGetData() async {
     // Tunggu hingga profile dimuat terlebih dahulu
     await _loadProfile();
 
@@ -38,7 +39,7 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<void> _loadProfile() async {
-    // setState(() async { 
+    // setState(() async {
     userToken =
         await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
     // });
@@ -59,12 +60,12 @@ class _SalesScreenState extends State<SalesScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        if (data['status']) {          
+        if (data['status']) {
           final List<dynamic> links = data['response'];
-          
+
           setState(() {
             _datalink = links;
-          });          
+          });
         } else {
           print('Failed to get links : ${data['message']}');
           _showFeedback(context, 'Failed to get links : ${data['message']}');
@@ -140,9 +141,11 @@ class _SalesScreenState extends State<SalesScreen> {
                       mainAxisSpacing: 16.0,
                       childAspectRatio: 1.0,
                     ),
-                    itemCount: linkProvider.links.length,
+                    itemCount: _datalink.length,
                     itemBuilder: (context, index) {
-                      return _buildCard(linkProvider.links[index]);
+                      final link = _datalink[index];
+                      final id = link['link_ID'];
+                      return _buildCard(_datalink[index], id); 
                     },
                   ),
                 ),
@@ -154,9 +157,9 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
-  Widget _buildCard(Map<String, String> linkData) {
+  Widget _buildCard(Map<String, dynamic> linkData, int index) {
     return GestureDetector(
-      onTap: () => _launchLink(linkData['link']!),
+      onTap: () => _launchLink(linkData['url']!),
       child: Card(
         color: Colors.white,
         elevation: 5,
@@ -170,7 +173,7 @@ class _SalesScreenState extends State<SalesScreen> {
             children: [
               Flexible(
                 child: Text(
-                  linkData['title']!,
+                  linkData['title'] ?? 'No Title',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -183,7 +186,7 @@ class _SalesScreenState extends State<SalesScreen> {
               const SizedBox(height: 4),
               Flexible(
                 child: Text(
-                  linkData['link']!,
+                  linkData['url'] ?? 'No URL',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black54,

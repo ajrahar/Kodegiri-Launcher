@@ -59,9 +59,11 @@ const createUsers = async (req, res) => {
 }
 
 // Update user by ID
-const UpdateUsers = async (req, res) => {
+const UpdateUsers = async (req, res) => { 
      try {
-          const [response] = await models.User.update(req.body, {
+          const { name, email, password } = req.body;
+          const hashedPassword = await bcrypt.hash(password, 10); 
+          const [response] = await models.User.update({ name, email, password: hashedPassword }, {
                where: {
                     user_ID: req.params.user_ID
                }
