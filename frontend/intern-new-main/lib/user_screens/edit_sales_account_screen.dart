@@ -1,7 +1,19 @@
+import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+void _showFeedback(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
 
 class EditSalesAccountScreen extends StatefulWidget {
- final Map<String, dynamic> account; 
+  final Map<String, dynamic> account;
   final Function(Map<String, dynamic>) onSave;
 
   const EditSalesAccountScreen(
@@ -12,72 +24,217 @@ class EditSalesAccountScreen extends StatefulWidget {
 }
 
 class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
-  late TextEditingController _nameController;
-  late TextEditingController _emailController;
-  late TextEditingController _passwordController;
-  bool _obscurePassword = true;
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  bool _isNameValid = true;
+  bool _isEmailValid = true;
+  bool _isPasswordValid = true;
 
   @override
   void initState() {
+    _getAccount(context);
     super.initState();
-    _nameController = TextEditingController(text: widget.account['name']);
-    _emailController = TextEditingController(text: widget.account['email']);
-    _passwordController =
-        TextEditingController(text: widget.account['password']);
   }
 
-  void _saveAccount() {
-    final updatedAccount = {
-      'name': _nameController.text,
-      'email': _emailController.text,
-      'password': _passwordController.text,
-    };
+  Future<void> _getAccount(BuildContext context) async {
+    final userId = widget.account['user_ID'];
 
-    widget.onSave(updatedAccount);
-    Navigator.pop(context);
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:3000/api/user/$userId',
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status']) {
+          setState(() {
+            _nameController.text = data['response']['name'];
+            _emailController.text = data['response']['email'];
+            // Assuming password is not returned for security reasons, or you could handle it accordingly.
+          });
+        } else {
+          print('Failed to get links : ${data['message']}');
+          _showFeedback(context, 'Failed to get links : ${data['message']}');
+        }
+      } else {
+        print('Failed to get links : ${response.statusCode}');
+        _showFeedback(context, 'Failed to get links : ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erorr cant get data : $e');
+      _showFeedback(context, 'Erorr cant get data : ${e}');
+    }
+  }
+
+  Future<void> _saveAccount() async {
+    if (_formKey.currentState!.validate()) {
+      final userId = widget.account['user_ID'];
+      final updatedAccount = {
+        'name': _nameController.text,
+        'email': _emailController.text,
+        'password': _passwordController.text,
+      };
+
+      try {
+        final response = await http.patch(
+          Uri.parse('http://localhost:3000/api/user/$userId'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(updatedAccount),
+        );
+
+        if (response.statusCode == 200) {
+          _showFeedback(context, 'Account updated successfully');
+          widget.onSave(updatedAccount);
+          Navigator.pop(context);
+        } else {
+          _showFeedback(
+              context, 'Failed to update account: ${response.statusCode}');
+        }
+      } catch (e) {
+        _showFeedback(context, 'Error updating account: $e');
+      }
+    }
+  }
+
+  String? _validateField(String value, String field) {
+    if (value.isEmpty) {
+      setState(() {
+        if (field == 'name') _isNameValid = false;
+        if (field == 'email') _isEmailValid = false;
+        if (field == 'password') _isPasswordValid = false;
+      });
+      return '$field should not be empty';
+    }
+    setState(() {
+      if (field == 'name') _isNameValid = true;
+      if (field == 'email') _isEmailValid = true;
+      if (field == 'password') _isPasswordValid = true;
+    });
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0XFFF9F9F9),
       appBar: AppBar(
-        title: const Text('Edit Sales Account'),
+        backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+        foregroundColor: Colors.white,
+        title: const Text('Edit Profile'),
+        leading: IconButton(
+            onPressed: () {
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => SalesAccountScreen()));
+            },
+            icon: const Icon(Icons.arrow_back)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Full Name',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-              ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter full name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isNameValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                  ),
+                  validator: (value) => _validateField(value ?? '', 'Name'),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Email',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter email',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isEmailValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                  ),
+                  validator: (value) => _validateField(value ?? '', 'Email'),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Password',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: 'Enter password',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isPasswordValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                  ),
+                  validator: (value) => _validateField(value ?? '', 'Password'),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveAccount,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Save', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveAccount,
-              child: const Text('Save'),
-            ),
-          ],
+          ),
         ),
       ),
     );

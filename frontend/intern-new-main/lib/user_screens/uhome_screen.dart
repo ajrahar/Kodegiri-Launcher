@@ -59,15 +59,12 @@ class _SalesScreenState extends State<SalesScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        if (data['status']) {
-          // Extract the 'response' field from the decoded JSON
+        if (data['status']) {          
           final List<dynamic> links = data['response'];
-
-          // Ensure that links are correctly processed
+          
           setState(() {
             _datalink = links;
-          });
-          // print('data : $links');
+          });          
         } else {
           print('Failed to get links : ${data['message']}');
           _showFeedback(context, 'Failed to get links : ${data['message']}');
