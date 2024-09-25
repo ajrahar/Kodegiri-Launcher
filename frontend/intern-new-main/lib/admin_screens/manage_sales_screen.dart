@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:Kodegiri/universal_screen/shared_preference.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
 import 'package:Kodegiri/user_screens/add_sales_account_screen.dart';
 import 'package:Kodegiri/user_screens/edit_sales_account_screen.dart';
 
@@ -41,11 +42,11 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
   }
 
   Future<void> _getAllDataAccount() async {
+     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     try {
       final response = await http.get(
-        Uri.parse(
-          'http://localhost:3000/api/users',
-        ),
+         Uri.parse('$apiUrl/users/'),
+   
         headers: {
           'Authorization': '$userToken',
           'Content-Type': 'application/json',

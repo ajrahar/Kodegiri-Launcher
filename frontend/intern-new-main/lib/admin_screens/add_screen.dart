@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Kodegiri/universal_screen/shared_preference.dart';
-import 'package:Kodegiri/admin_screens/home_screen.dart';
-import 'package:http/http.dart' as http;
-import 'dart:math';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:Kodegiri/admin_screens/home_screen.dart';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
 
 class WebLauncherHomePage extends StatefulWidget {
   const WebLauncherHomePage({super.key});
@@ -25,6 +24,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
   bool _isLinkValid = true;
 
   void _saveLink() async {
+     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';      
     if (_formKey.currentState!.validate()) {
       final title = _titleController.text;
       final url = _linkController.text;
@@ -38,7 +38,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
 
       try {
         final response = await http.post(
-          Uri.parse('http://localhost:3000/api/links'),
+           Uri.parse('$apiUrl/links'),
           headers: {
             'Authorization': '$token',
             'Content-Type': 'application/json',
@@ -49,10 +49,20 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
           final data = jsonDecode(response.body);
 
           if (data['status'] == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Link created : ${data['message']} ')),
-            );
             print('Link created : ${data['message']}');
+
+            await Future.delayed(const Duration(milliseconds: 500));
+            
+            await QuickAlert.show(
+              context: context,
+              type: QuickAlertType.success,
+              onConfirmBtnTap: () {
+                Navigator.pop(context);
+              },
+              confirmBtnColor: const Color(0xFF12C06A),  
+              customAsset: 'assets/gif/Success.gif', 
+              text: "Link successfully created!",
+            );
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -86,7 +96,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
         if (field == 'title') _isTitleValid = false;
         if (field == 'link') _isLinkValid = false;
       });
-      return '$field should not be empty';
+      return '$field cannot be empty';
     }
     setState(() {
       if (field == 'title') _isTitleValid = true;
@@ -103,6 +113,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
         title: const Text('Add New Link'),
+        centerTitle: true,
         leading: IconButton(
             onPressed: () {
               Navigator.pushReplacementNamed(context, '/home');
@@ -116,9 +127,20 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 16),
+              const Text(
+                'Please fill out the form',
+                style: TextStyle(
+                    fontSize: 16, color: Color.fromARGB(255, 96, 95, 95)),
+              ),
+              const SizedBox(height: 16),
               const Text(
                 'Title',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 95, 95, 95),
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -136,18 +158,22 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
                     borderSide: const BorderSide(color: Colors.grey),
                   ),
                 ),
-                validator: (value) => _validateField(value ?? '', 'name'),
+                validator: (value) => _validateField(value ?? '', 'Title'),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Link',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 95, 95, 95),
+                ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _linkController,
                 decoration: InputDecoration(
-                  hintText: 'Enter Link',
+                  hintText: 'Enter the Link',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
@@ -161,7 +187,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
                 ),
                 validator: (value) => _validateField(value ?? '', 'Link'),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 60),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -170,6 +196,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
                     backgroundColor: const Color.fromARGB(255, 25, 47, 84),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(56, 56),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -183,37 +210,4 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
       ),
     );
   }
-}
-
-Future<void> _launchLink(String url) async {
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://$url';
-  }
-
-  Uri uri = Uri.parse(url);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri);
-  } else {
-    throw 'Could not launch $url';
-  }
-}
-
-Future<void> _saveTitleToSharedPreferences(
-    String id, String title, String link) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  // Menyimpan title dan link dengan key unik
-  await prefs.setString('title_$id', title);
-  await prefs.setString('link_$id', link);
-}
-
-String generateUniqueId() {
-  const String chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  Random random = Random();
-
-  // Generate a 6-character string from the chars list
-  String id =
-      List.generate(6, (index) => chars[random.nextInt(chars.length)]).join('');
-
-  return id;
 }

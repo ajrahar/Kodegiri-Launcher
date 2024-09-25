@@ -1,6 +1,6 @@
-import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override

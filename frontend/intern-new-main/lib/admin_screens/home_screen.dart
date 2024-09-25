@@ -1,13 +1,15 @@
+import 'dart:convert';
+import 'add_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:Kodegiri/universal_screen/login_screen.dart';
 import 'package:Kodegiri/admin_screens/edit_profile_screen.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
-import 'package:Kodegiri/universal_screen/login_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'add_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Kodegiri/universal_screen/shared_preference.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,13 +31,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     _loadProfile();
     _getAllDataLinks();
-    super.initState();
-    // _searchController.addListener(_filterLinks);
+    super.initState();    
   }
 
   @override
-  void dispose() {
-    // _searchController.removeListener(_filterLinks);
+  void dispose() {    
     _searchController.dispose();
     super.dispose();
   }
@@ -50,27 +50,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _getAllDataLinks() async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     try {
       final response = await http.get(
-        Uri.parse(
-          'http://localhost:3000/api/links',
-        ),
+        Uri.parse('$apiUrl/links'),
         headers: {
           'Authorization': '$userToken',
           'Content-Type': 'application/json',
         },
-      );      
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         if (data['status']) {
-          
           final List<dynamic> links = data['response'];
-        
+
           setState(() {
             _datalink = links;
-          });
-          // print('data : $links');
+          });          
         } else {
           print('Failed to get links : ${data['message']}');
           _showFeedback(context, 'Failed to get links : ${data['message']}');
@@ -86,11 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deletedLink(BuildContext context, int index) async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     try {
       final response = await http.delete(
-        Uri.parse(
-          'http://localhost:3000/api/link/$index',
-        ),
+        Uri.parse('$apiUrl/link/$index'),
         headers: {
           'Authorization': '$userToken',
           'Content-Type': 'application/json',
@@ -99,9 +95,19 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
+        await Future.delayed(const Duration(milliseconds: 500));
+
         if (data['status'] == true) {
-          print('Deleted link: ${data['message']}');
-          _showFeedback(context, 'Deleted link: ${data['message']}');
+          await QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            onConfirmBtnTap: () {
+              Navigator.pop(context);
+            },
+            confirmBtnColor: const Color(0xFF12C06A),
+            customAsset: 'assets/gif/Success.gif',
+            text: "Link successfully deleted!",
+          );
         } else {
           print('Failed deleted : ${data['message']}');
           _showFeedback(context, 'Failed deleted : ${data['message']}');
@@ -128,10 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => {
-              _deletedLink(context, index),
-              Navigator.pop(context),
-              _getAllDataLinks()
+            onPressed: () async {             
+              await _deletedLink(context, index);
+              await _getAllDataLinks();
+              Navigator.pop(context);
             },
             child: const Text('Delete'),
           ),
@@ -167,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      drawer: _buildSidebar(), // Include the sidebar (Drawer)
+      drawer: _buildSidebar(), 
       body: Stack(
         children: [
           Center(
@@ -258,12 +264,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 CircleAvatar(
                   radius: 30,
                   backgroundImage: AssetImage(
-                    'assets/images/profile.png', // Add your admin profile image
+                    'assets/icons/UserProfile.png', 
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  adminName, // Update with current admin name
+                  adminName, 
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -272,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  adminEmail, // Update with current admin email
+                  adminEmail, 
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
@@ -411,48 +417,52 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => EditScreen(
           linkData: linkData,
           onSave: (updatedData) {
-            // print('data edit :$updatedData');
+            final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
             setState(() async {
               try {
                 final response = await http.patch(
-                  Uri.parse('http://localhost:3000/api/link/$index'),
+                  Uri.parse('$apiUrl/link/$index'),
                   headers: {
                     'Authorization': '$userToken',
                     'Content-Type': 'application/json',
                   },
-                  body: jsonEncode(updatedData), // Data yang ingin diupdate
+                  body: jsonEncode(updatedData),
                 );
 
                 if (response.statusCode == 200) {
                   final data = jsonDecode(response.body);
 
                   if (data['status'] == true) {
-                    // print('Updated link : ${data['message']}');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Updated link: ${data['message']}')),
+                    await Future.delayed(const Duration(milliseconds: 500));
+
+                    await QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.success,
+                      onConfirmBtnTap: () {
+                        Navigator.pop(context);
+                      },
+                      confirmBtnColor: const Color(0xFF12C06A),
+                      customAsset: 'assets/gif/Success.gif',
+                      text: "Link successfully updated!",
                     );
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
-                  } else {
-                    // print('Failed to update: ${data['message']}');
+                  } else {                    
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content:
                               Text('Failed to update: ${data['message']}')),
                     );
                   }
-                } else {
-                  // print('Error code: ${response.statusCode}');
+                } else {                  
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                         content: Text('Error code: ${response.statusCode}')),
                   );
                 }
-              } catch (e) {
-                // print('Error: cannot update data: $e');
+              } catch (e) {                
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e')),
                 );
@@ -494,43 +504,137 @@ class EditScreen extends StatelessWidget {
   final Map<String, dynamic> linkData;
   final Function(Map<String, String>) onSave;
 
-  const EditScreen({super.key, required this.linkData, required this.onSave});
+  EditScreen({super.key, required this.linkData, required this.onSave});
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController titleController =
+    final _formKey = GlobalKey<FormState>();
+    final TextEditingController _titleController =
         TextEditingController(text: linkData['title']);
-    final TextEditingController linkController =
+    final TextEditingController _linkController =
         TextEditingController(text: linkData['url']);
 
+    bool _isTitleValid = true;
+    bool _isLinkValid = true;
+
+    Future<void> _saveLink() async {
+      if (_formKey.currentState!.validate()) {
+        final updatedData = {
+          'title': _titleController.text,
+          'url': _linkController.text,
+        };
+        onSave(updatedData);
+      }
+    }
+
+    String? _validateField(String value, String field) {
+      if (value.isEmpty) {
+        if (field == 'title') _isTitleValid = false;
+        if (field == 'link') _isLinkValid = false;
+        return '$field cannot be empty';
+      }
+      return null;
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFFFF9F9F9),
       appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+        foregroundColor: Colors.white,
         title: const Text('Edit Link'),
+        centerTitle: true,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/home');
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'Title'),
-            ),
-            TextField(
-              controller: linkController,
-              decoration: const InputDecoration(labelText: 'Link'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                onSave({
-                  'title': titleController.text,
-                  'url': linkController.text,
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              const Text(
+                'Please fill out the form',
+                style: TextStyle(fontSize: 16, color: Color(0xFF60605F)),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Title',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5F5F5F),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Enter the title',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _isTitleValid ? Colors.grey : Colors.red,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.grey),
+                  ),
+                ),
+                validator: (value) => _validateField(value ?? '', 'Title'),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Link',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5F5F5F),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _linkController,
+                decoration: InputDecoration(
+                  hintText: 'Enter the Link',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _isLinkValid ? Colors.grey : Colors.red,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.grey),
+                  ),
+                ),
+                validator: (value) => _validateField(value ?? '', 'Link'),
+              ),
+              const SizedBox(height: 60),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saveLink,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    minimumSize: const Size(56, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Save', style: TextStyle(fontSize: 18)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
