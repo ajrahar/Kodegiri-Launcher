@@ -1,7 +1,8 @@
-import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 
 void _showFeedback(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -41,12 +42,10 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
   }
 
   Future<void> _getAccount(BuildContext context) async { 
-
+     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000'; 
     try {
       final response = await http.get(
-        Uri.parse(
-          'http://localhost:3000/api/user/${widget.user_ID}',
-        ),
+          Uri.parse('$apiUrl/user/${widget.user_ID}'),       
         headers: {
           'Content-Type': 'application/json',
         },
@@ -56,8 +55,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
         if (data['status']) {
           setState(() {
             _nameController.text = data['response']['name'];
-            _emailController.text = data['response']['email'];
-            // Assuming password is not returned for security reasons, or you could handle it accordingly.
+            _emailController.text = data['response']['email'];           
           });
         } else {
           print('Failed to get links : ${data['message']}');
@@ -74,6 +72,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
   }
 
   Future<void> _saveAccount() async {
+      final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';    
     if (_formKey.currentState!.validate()) {
       final userId = widget.account['user_ID'];
       final updatedAccount = {

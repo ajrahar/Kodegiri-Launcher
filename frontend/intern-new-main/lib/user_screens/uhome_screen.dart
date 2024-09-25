@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Import the provider package
-import 'package:url_launcher/url_launcher.dart';
-import 'package:Kodegiri/universal_screen/link_provider.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:Kodegiri/universal_screen/link_provider.dart';
 import 'package:Kodegiri/universal_screen/shared_preference.dart';
 
 class SalesScreen extends StatefulWidget {
@@ -23,14 +24,11 @@ class _SalesScreenState extends State<SalesScreen> {
   void initState() {
     _loadProfileAndGetData();
     super.initState();
-    // You can initialize or fetch data here if needed
   }
 
   Future<void> _loadProfileAndGetData() async {
-    // Tunggu hingga profile dimuat terlebih dahulu
     await _loadProfile();
 
-    // Setelah token di-load, baru lanjutkan dengan mengambil data link
     if (userToken.isNotEmpty) {
       _getAllDataLinks();
     } else {
@@ -46,11 +44,10 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<void> _getAllDataLinks() async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     try {
       final response = await http.get(
-        Uri.parse(
-          'http://localhost:3000/api/links',
-        ),
+        Uri.parse('$apiUrl/user/links'),
         headers: {
           HttpHeaders.authorizationHeader: '$userToken',
           HttpHeaders.acceptHeader: 'application/json',
@@ -145,7 +142,7 @@ class _SalesScreenState extends State<SalesScreen> {
                     itemBuilder: (context, index) {
                       final link = _datalink[index];
                       final id = link['link_ID'];
-                      return _buildCard(_datalink[index], id); 
+                      return _buildCard(_datalink[index], id);
                     },
                   ),
                 ),

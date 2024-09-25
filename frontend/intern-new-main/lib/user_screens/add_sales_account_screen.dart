@@ -1,7 +1,8 @@
-import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
 
 class AddSalesAccountScreen extends StatefulWidget {
   const AddSalesAccountScreen({super.key});
@@ -22,6 +23,7 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
   bool _isPasswordValid = true;
 
   Future<void> _saveAccount() async {
+     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';      
     if (_formKey.currentState!.validate()) {
       final newAccount = {
         'name': _nameController.text,
@@ -31,7 +33,7 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
 
       try {
         final response = await http.post(
-          Uri.parse('http://localhost:3000/api/user'),
+           Uri.parse('$apiUrl/user'),
           headers: {
             'Content-Type': 'application/json',
           },
