@@ -10,6 +10,5 @@ class LinkProvider with ChangeNotifier {
     _links.add(link);
     notifyListeners();
   }
-
-  // Add other methods as needed
+ 
 }
