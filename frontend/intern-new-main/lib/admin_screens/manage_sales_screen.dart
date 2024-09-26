@@ -14,7 +14,6 @@ void _showFeedback(BuildContext context, String message) {
     ),
   );
 }
-
 class SalesAccountScreen extends StatefulWidget {
   const SalesAccountScreen({super.key});
 
@@ -46,7 +45,6 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
     try {
       final response = await http.get(
          Uri.parse('$apiUrl/users/'),
-   
         headers: {
           'Authorization': '$userToken',
           'Content-Type': 'application/json',
@@ -95,8 +93,7 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
   }
 
   void _editAccount(int index) {
-    var userID = _dataAccounts[index]['user_ID'];
-    // _showFeedback(context, 'Deleted link: ${userID}');
+    var userID = _dataAccounts[index]['user_ID'];   
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -115,12 +112,11 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
 
 Future<void> _deletedAccount(BuildContext context, int index) async {
   final userId = _dataAccounts[index]['user_ID']; 
+  final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';      
 
   try {
-    final response = await http.delete(
-      Uri.parse(
-        'http://localhost:3000/api/user/$userId', 
-      ),
+    final response = await http.delete(     
+      Uri.parse('$apiUrl/user/$userId'),
       headers: {
         'Authorization': '$userToken', 
         'Content-Type': 'application/json',
