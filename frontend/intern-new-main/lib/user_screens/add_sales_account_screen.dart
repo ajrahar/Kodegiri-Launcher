@@ -82,6 +82,7 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
+           centerTitle: true,
         title: const Text('Add Sales Account'),
         leading: IconButton(
             onPressed: () {

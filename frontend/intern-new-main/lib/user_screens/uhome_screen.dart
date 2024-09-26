@@ -37,23 +37,20 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<void> _loadProfile() async {
-    // setState(() async {
     userToken =
         await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
-    // });
   }
 
   Future<void> _getAllDataLinks() async {
     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     try {
       final response = await http.get(
-        Uri.parse('$apiUrl/user/links'),
+        Uri.parse('$apiUrl/links'),
         headers: {
           HttpHeaders.authorizationHeader: '$userToken',
           HttpHeaders.acceptHeader: 'application/json',
         },
       );
-      // print('response : ${response.body}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -92,12 +89,13 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Access the LinkProvider
     final linkProvider = Provider.of<LinkProvider>(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
+        leading: null,
+        centerTitle: true,
         title: const Text(
           'Link Manager',
           style: TextStyle(color: Colors.white),
