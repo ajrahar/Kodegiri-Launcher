@@ -159,15 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
-      
       appBar: AppBar(
         title: Text(
           _viewArchived ? 'Archived Links' : 'Link Manager',
           style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFF1F2937),
-        iconTheme: IconThemeData(color: Colors.white), 
-          centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(_viewArchived ? Icons.view_list : Icons.archive),
@@ -488,13 +485,11 @@ Future<void> _launchLink(String url) async {
   }
 
   if (await canLaunchUrl(uri)) {
-    await launchUrl(uri);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   } else {
     throw 'Could not launch $uri';
   }
 }
-
-
 
 void _showFeedback(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
