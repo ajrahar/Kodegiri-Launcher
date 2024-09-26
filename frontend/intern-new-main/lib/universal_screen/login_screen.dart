@@ -78,9 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await SharedPreferencesHelper.saveString('token', token);
         _sweatAlert(context, isAdmin);
       } else {
-
         await Future.delayed(const Duration(milliseconds: 500));
-
         await QuickAlert.show(
           context: context,
           type: QuickAlertType.error,
