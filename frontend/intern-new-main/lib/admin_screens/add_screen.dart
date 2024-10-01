@@ -56,23 +56,33 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
             await QuickAlert.show(
               context: context,
               type: QuickAlertType.success,
-              onConfirmBtnTap: () {
-                Navigator.pop(context);
-              },
+              title: "Success",
               confirmBtnColor: const Color(0xFF12C06A),  
               customAsset: 'assets/gif/Success.gif', 
-              text: "Link successfully created!",
+              text: "Link Successfully Created!",
+              onConfirmBtnTap: () {
+                Navigator.pop(context);
+              },              
             );
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text('Link Gagal ditambahkan ${data['message']}')),
+            Future.delayed(const Duration(milliseconds: 500)); 
+           QuickAlert.show(context: context, type: QuickAlertType.error,
+           title: "Failed",
+           confirmBtnColor: const Color(0xFFde0239),
+           text: "Failed to Add Link",
+           onConfirmBtnTap: () {
+             Navigator.of(context).pop();
+           },
             );
-            print('Link Gagal ditambahkan : ${data['message']}');
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(
+            //       content: Text('Link Gagal ditambahkan ${data['message']}')),
+            // );
+            // print('Link Gagal ditambahkan : ${data['message']}');
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

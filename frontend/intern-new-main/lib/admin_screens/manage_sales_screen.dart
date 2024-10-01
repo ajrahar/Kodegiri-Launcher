@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:quickalert/quickalert.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:Kodegiri/universal_screen/shared_preference.dart';
 import 'package:Kodegiri/user_screens/add_sales_account_screen.dart';
@@ -14,6 +15,7 @@ void _showFeedback(BuildContext context, String message) {
     ),
   );
 }
+
 class SalesAccountScreen extends StatefulWidget {
   const SalesAccountScreen({super.key});
 
@@ -40,42 +42,44 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
     });
   }
 
-  Future<void> _getAllDataAccount() async {
-     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
-    try {
-      final response = await http.get(
-         Uri.parse('$apiUrl/users/'),
-        headers: {
-          'Authorization': '$userToken',
-          'Content-Type': 'application/json',
-        },
-      );
-      print('$userToken');
-      print('${response.body}');
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['status']) {
-          final List<dynamic> dataAccountList = data['response'];
-
-          setState(() {
-            _dataAccounts = dataAccountList
-                .map((account) => account as Map<String, dynamic>)
-                .toList();
-          });
-        } else {
-          print('Failed to get links : ${data['message']}');
-          _showFeedback(context, 'Failed to get links : ${data['message']}');
+Future<void> _getAllDataAccount() async {
+  final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
+  try {
+    final response = await http.get(
+      Uri.parse('$apiUrl/users/'),
+      headers: {
+        'Authorization': '$userToken',
+        'Content-Type': 'application/json',
+      },
+    );
+    
+    var responseData = jsonDecode(response.body);
+    
+    if (response.statusCode == 200 && responseData['status']) {
+      final List<dynamic> dataAccountList = responseData['response'];
+      setState(() {
+        _dataAccounts = dataAccountList
+            .map((account) => account as Map<String, dynamic>)
+            .toList();
+      });
+    } else {
+      await Future.delayed(const Duration(milliseconds: 500));
+      await QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        text: responseData['message'] ?? 'Failed to get account data!',
+        confirmBtnColor: const Color(0xFFde0239),
+        onConfirmBtnTap: () {
+          Navigator.pop(context);
         }
-      } else {
-        print('Failed to get links : ${response.statusCode}');
-        _showFeedback(context, 'Failed to get links : ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Erorr cant get data : $e');
-      _showFeedback(context, 'Erorr cant get data : ${e}');
+      );
     }
+  } catch (e) {
+    print('Error cant get data : $e');
+    _showFeedback(context, 'Error cant get data : $e');
   }
+}
+
 
   void _addAccount() {
     Navigator.push(
@@ -93,12 +97,12 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
   }
 
   void _editAccount(int index) {
-    var userID = _dataAccounts[index]['user_ID'];   
+    var userID = _dataAccounts[index]['user_ID'];
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditSalesAccountScreen(
-          user_ID :userID,
+          user_ID: userID,
           account: _dataAccounts[index],
           onSave: (updatedAccount) {
             setState(() {
@@ -110,62 +114,73 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
     );
   }
 
-Future<void> _deletedAccount(BuildContext context, int index) async {
-  final userId = _dataAccounts[index]['user_ID']; 
-  final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';      
+  Future<void> _deletedAccount(BuildContext context, int index) async {
+    final userId = _dataAccounts[index]['user_ID'];
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
 
-  try {
-    final response = await http.delete(     
-      Uri.parse('$apiUrl/user/$userId'),
-      headers: {
-        'Authorization': '$userToken', 
-        'Content-Type': 'application/json',
-      },
-    );
+    try {
+      final response = await http.delete(
+        Uri.parse('$apiUrl/user/$userId'),
+        headers: {
+          'Authorization': '$userToken',
+          'Content-Type': 'application/json',
+        },
+      );
+      var responseData = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+        if (data['status'] == true) {
+          await Future.delayed(const Duration(milliseconds: 500));
 
-      if (data['status'] == true) {
-        print('Deleted Account: ${data['message']}');
-        _showFeedback(context, 'Deleted link: ${data['message']}');
-        _getAllDataAccount();
+          await QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            title: "Success",
+            confirmBtnColor: const Color(0xFF12C06A),
+            text: responseData['message'] ?? "Deleted Account",
+            onConfirmBtnTap: () {
+              Navigator.pop(context);
+              _getAllDataAccount();
+            },
+          );
+        } else {
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          await QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: "Failed",
+            confirmBtnColor: const Color(0xFFde0239),
+            text: responseData['message'] ?? "Failed to Delete Sales Account",
+            onConfirmBtnTap: () {
+              Navigator.pop(context);
+            },
+          );
+        }
       } else {
-        print('Failed to delete: ${data['message']}');
-        _showFeedback(context, 'Failed to delete: ${data['message']}');
+        print('Error code: ${response.statusCode}');
+        _showFeedback(context, 'Failed to delete: ${response.statusCode}');
       }
-    } else {
-      print('Error code: ${response.statusCode}');
-      _showFeedback(context, 'Failed to delete: ${response.statusCode}');
+    } catch (e) {
+      print('Error while deleting data: $e');
+      _showFeedback(context, 'Error while deleting data: $e');
     }
-  } catch (e) {
-    print('Error while deleting data: $e');
-    _showFeedback(context, 'Error while deleting data: $e');
   }
-}
-
 
   void _confirmAndDeleteAccount(int index, context) async {
-    showDialog(
+    QuickAlert.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this account'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => {
-              _deletedAccount(context, index),
-              Navigator.pop(context),
-              _getAllDataAccount()
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      type: QuickAlertType.confirm,
+      text: "Are You Sure Want to Delete This Account?",
+      confirmBtnText: 'Delete',
+      cancelBtnText: 'Cancel',
+      confirmBtnColor: const Color(0xFF12C06A),
+      onConfirmBtnTap: () async {
+        Navigator.pop(context);
+        await _deletedAccount(context, index);
+        await _getAllDataAccount();
+      },
     );
   }
 
@@ -176,6 +191,7 @@ Future<void> _deletedAccount(BuildContext context, int index) async {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
+        centerTitle: true,
         title: const Text('Manage Sales Accounts'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -202,8 +218,11 @@ Future<void> _deletedAccount(BuildContext context, int index) async {
                     elevation: 0,
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
-                      leading: const Icon(Icons.account_circle,
-                          size: 40, color: Colors.blue),
+                      leading: Image.asset(
+                        'assets/icons/UserProfile.png',
+                        width: 40,
+                        height: 40,
+                      ),
                       title: Text(
                         _dataAccounts[index]['name']!,
                         style: const TextStyle(fontWeight: FontWeight.bold),

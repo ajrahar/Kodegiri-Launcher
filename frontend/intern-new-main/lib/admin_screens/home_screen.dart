@@ -31,11 +31,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     _loadProfile();
     _getAllDataLinks();
-    super.initState();    
+    super.initState();
   }
 
   @override
-  void dispose() {    
+  void dispose() {
     _searchController.dispose();
     super.dispose();
   }
@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           setState(() {
             _datalink = links;
-          });          
+          });
         } else {
           print('Failed to get links : ${data['message']}');
           _showFeedback(context, 'Failed to get links : ${data['message']}');
@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             confirmBtnColor: const Color(0xFF12C06A),
             customAsset: 'assets/gif/Success.gif',
-            text: "Link successfully deleted!",
+            text: "Link Successfully Deleted!",
           );
         } else {
           print('Failed deleted : ${data['message']}');
@@ -123,26 +123,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _confirmAndDeleteLink(int index, context) async {
-    showDialog(
+    QuickAlert.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Delete'),
-        content: const Text('Are you sure you want to delete this link?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {             
-              await _deletedLink(context, index);
-              await _getAllDataLinks();
-              Navigator.pop(context);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      type: QuickAlertType.confirm,
+      text: "Are You Sure Want to Delete This Link?",
+      confirmBtnText: 'Delete',
+      cancelBtnText: 'Cancel',
+      confirmBtnColor: const Color(0xFF12C06A),
+      onConfirmBtnTap: () async {
+        Navigator.pop(context); 
+        await _deletedLink(context, index); 
+        await _getAllDataLinks(); 
+      },
     );
   }
 
@@ -164,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _viewArchived ? 'Archived Links' : 'Link Manager',
           style: const TextStyle(color: Colors.white),
         ),
-          centerTitle: true,
+        centerTitle: true,
         backgroundColor: const Color(0xFF1F2937),
         actions: [
           IconButton(
@@ -174,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      drawer: _buildSidebar(), 
+      drawer: _buildSidebar(),
       body: Stack(
         children: [
           Center(
@@ -264,12 +256,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 CircleAvatar(
                   radius: 30,
                   backgroundImage: AssetImage(
-                    'assets/icons/UserProfile.png', 
+                    'assets/icons/UserProfile.png',
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  adminName, 
+                  adminName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -278,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  adminEmail, 
+                  adminEmail,
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
@@ -288,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.group, color: Colors.black),
+            leading: const Icon(Icons.group, color: Color(0xFF1F2937)),
             title: const Text('Manage Sales Accounts'),
             onTap: () {
               Navigator.pushReplacement(
@@ -299,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.edit, color: Colors.black),
+            leading: const Icon(Icons.edit, color: Color(0xFF1F2937)),
             title: const Text('Edit Profile'),
             onTap: () {
               Navigator.push(
@@ -310,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.black),
+            leading: const Icon(Icons.logout, color: Color(0xFF1F2937)),
             title: const Text('Logout'),
             onTap: _logout,
           ),
@@ -449,20 +441,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       context,
                       MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
-                  } else {                    
+                  } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                           content:
                               Text('Failed to update: ${data['message']}')),
                     );
                   }
-                } else {                  
+                } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                         content: Text('Error code: ${response.statusCode}')),
                   );
                 }
-              } catch (e) {                
+              } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e')),
                 );
