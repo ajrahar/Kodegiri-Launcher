@@ -83,7 +83,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
 
       try {
         final response = await http.patch(
-          Uri.parse('http://localhost:3000/api/user/$userId'),
+            Uri.parse('$apiUrl/user/$userId'),       
           headers: {
             'Content-Type': 'application/json',
           },
