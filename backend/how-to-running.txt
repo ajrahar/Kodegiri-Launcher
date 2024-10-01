@@ -1,0 +1,14 @@
+menjalankan program -->
+npm start
+
+melakukan migrasi ke database sesuai model -->
+npm run migration:all
+
+menghapus/mengebalikan semua migrasi dari database sesuai model -->
+npm run migration:undo:all
+
+membuat data dumy dengan seeder -->
+npm run seed:all
+
+menghapus/ mengembalikan semua data dummy dari database -->
+npm seed:undo:all
