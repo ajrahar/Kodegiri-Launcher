@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
+import 'package:quickalert/quickalert.dart';
 
 void _showFeedback(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -19,7 +20,10 @@ class EditSalesAccountScreen extends StatefulWidget {
   final Function(Map<String, dynamic>) onSave;
 
   const EditSalesAccountScreen(
-      {super.key,required this.user_ID, required this.account, required this.onSave});
+      {super.key,
+      required this.user_ID,
+      required this.account,
+      required this.onSave});
 
   @override
   State<EditSalesAccountScreen> createState() => _EditSalesAccountScreenState();
@@ -34,6 +38,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
   bool _isNameValid = true;
   bool _isEmailValid = true;
   bool _isPasswordValid = true;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -41,29 +46,49 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
     super.initState();
   }
 
-  Future<void> _getAccount(BuildContext context) async { 
-     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000'; 
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
+  Future<void> _getAccount(BuildContext context) async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     try {
       final response = await http.get(
-          Uri.parse('$apiUrl/user/${widget.user_ID}'),       
+        Uri.parse('$apiUrl/user/${widget.user_ID}'),
         headers: {
           'Content-Type': 'application/json',
         },
       );
       if (response.statusCode == 200) {
+         Future.delayed(const Duration(milliseconds: 500));
         final data = jsonDecode(response.body);
         if (data['status']) {
           setState(() {
-            _nameController.text = data['response']['name'];
-            _emailController.text = data['response']['email'];           
+            _nameController.text = data['response']['name'] ?? '';
+            _emailController.text = data['response']['email'] ?? '';
           });
         } else {
           print('Failed to get links : ${data['message']}');
           _showFeedback(context, 'Failed to get links : ${data['message']}');
         }
       } else {
-        print('Failed to get links : ${response.statusCode}');
-        _showFeedback(context, 'Failed to get links : ${response.statusCode}');
+        Future.delayed(const Duration(milliseconds: 500));
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: "Failed",
+          confirmBtnColor: const Color(0xFFde0239),
+          text: "Failed to Get Data Sales Account",
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop();
+          },
+        );
+
+
+        // print('Failed to get links : ${response.statusCode}');
+        // _showFeedback(context, 'Failed to get links : ${response.statusCode}');
       }
     } catch (e) {
       print('Erorr cant get data : $e');
@@ -72,18 +97,19 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
   }
 
   Future<void> _saveAccount() async {
-      final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';    
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     if (_formKey.currentState!.validate()) {
       final userId = widget.account['user_ID'];
       final updatedAccount = {
-        'name': _nameController.text,
-        'email': _emailController.text,
-        'password': _passwordController.text,
-      };
+  'name': _nameController.text.isNotEmpty ? _nameController.text : '',
+  'email': _emailController.text.isNotEmpty ? _emailController.text : '',
+  'password': _passwordController.text.isNotEmpty ? _passwordController.text : '',
+};
+
 
       try {
         final response = await http.patch(
-            Uri.parse('$apiUrl/user/$userId'),       
+          Uri.parse('$apiUrl/user/$userId'),
           headers: {
             'Content-Type': 'application/json',
           },
@@ -91,13 +117,40 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
         );
 
         if (response.statusCode == 200) {
-          _showFeedback(context, 'Account updated successfully');
-          widget.onSave(updatedAccount);
-          Navigator.pop(context);
+           Future.delayed(const Duration(milliseconds: 500));
+             await QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: "Success",
+          confirmBtnColor: const Color(0xFF12C06A),
+          customAsset: 'assets/gif/Success.gif',
+          text: "Congratulations, Sales account successfully updated!",
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => SalesAccountScreen()),
+            ); 
+          },
+        );
+
+        widget.onSave(updatedAccount);
         } else {
-          _showFeedback(
-              context, 'Failed to update account: ${response.statusCode}');
+           Future.delayed(const Duration(milliseconds: 500));
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: "Failed",
+            confirmBtnColor: const Color(0xFFde0239),
+            text: "Failed to Update Sales Account",
+            onConfirmBtnTap: () {
+              Navigator.of(context).pop();
+            },
+          );
         }
+        //   _showFeedback(
+        //       context, 'Failed to update account: ${response.statusCode}');
+        // }
       } catch (e) {
         _showFeedback(context, 'Error updating account: $e');
       }
@@ -199,13 +252,22 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Enter password',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
                         color: _isPasswordValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: _togglePasswordVisibility,
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: const Color.fromARGB(255, 25, 47, 84),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(

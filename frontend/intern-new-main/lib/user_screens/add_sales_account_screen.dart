@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
+import 'package:quickalert/quickalert.dart';
 
 class AddSalesAccountScreen extends StatefulWidget {
   const AddSalesAccountScreen({super.key});
@@ -21,9 +22,16 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
   bool _isNameValid = true;
   bool _isEmailValid = true;
   bool _isPasswordValid = true;
+  bool _obscurePassword = true;
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
 
   Future<void> _saveAccount() async {
-     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';      
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     if (_formKey.currentState!.validate()) {
       final newAccount = {
         'name': _nameController.text,
@@ -33,21 +41,41 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
 
       try {
         final response = await http.post(
-           Uri.parse('$apiUrl/user'),
+          Uri.parse('$apiUrl/user'),
           headers: {
             'Content-Type': 'application/json',
           },
           body: jsonEncode(newAccount),
         );
 
-        if (response.statusCode == 201) {         
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User added successfully')),
+        if (response.statusCode == 201) {
+          Future.delayed(const Duration(milliseconds: 500));
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            title: "Success",
+            confirmBtnColor: const Color(0xFF12C06A),
+            customAsset: 'assets/gif/Success.gif',
+            text: "Congratulations, Sales account successfully created!",
+            onConfirmBtnTap: () {
+              Navigator.of(context).pop();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => SalesAccountScreen()),
+              );
+            },
           );
-           Navigator.pop(context, newAccount);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to add user')),
+          Future.delayed(const Duration(milliseconds: 500));
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: "Failed",
+            confirmBtnColor: const Color(0xFFde0239),
+            text: "Failed to Add Sales Account",
+            onConfirmBtnTap: () {
+              Navigator.of(context).pop();
+            },
           );
         }
       } catch (error) {
@@ -82,13 +110,14 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
-           centerTitle: true,
+        centerTitle: true,
         title: const Text('Add Sales Account'),
         leading: IconButton(
             onPressed: () {
               Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => SalesAccountScreen()));            
+                  MaterialPageRoute(
+                      builder: (context) => SalesAccountScreen()));
             },
             icon: const Icon(Icons.arrow_back)),
       ),
@@ -153,7 +182,7 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Enter password',
                     border: OutlineInputBorder(
@@ -161,6 +190,15 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
                       borderSide: BorderSide(
                         color: _isPasswordValid ? Colors.grey : Colors.red,
                       ),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: _togglePasswordVisibility,
+                      color: const Color.fromARGB(255, 25, 47, 84),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

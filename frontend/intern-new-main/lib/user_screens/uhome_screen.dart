@@ -94,20 +94,17 @@ class _SalesScreenState extends State<SalesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        leading: null,
+        leading: IconButton(
+          icon: const Icon(Icons.logout, color: Colors.white),
+          onPressed: _logout,
+          tooltip: 'Log Out',
+        ),
         centerTitle: true,
         title: const Text(
           'Link Manager',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFF1F2937),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-            tooltip: 'Log Out',
-          ),
-        ],
       ),
       body: Stack(
         children: [
