@@ -12,6 +12,8 @@ const doc = {
      },
      host: 'localhost:3000/api',
      schemes: ['http', 'https'],
+     // host: 'api-crm.rikiadhin.my.id/api', for deploying
+     // schemes: ['https'], for deploying
      consumes: ['application/json'],
      produces: ['application/json'],
      tags: [ 
