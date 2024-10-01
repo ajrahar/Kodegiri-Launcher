@@ -72,8 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         bool isAdmin = decodedToken['isAdmin'] == true;
 
-        await SharedPreferencesHelper.saveString('name', decodedToken['name']);
-        await SharedPreferencesHelper.saveString('email', decodedToken['email']);
+        await SharedPreferencesHelper.saveString('user_ID', decodedToken['user_ID']);
         await SharedPreferencesHelper.saveToken(token);
         _sweatAlert(context, isAdmin);
       } else {

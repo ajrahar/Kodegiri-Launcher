@@ -27,18 +27,13 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<void> _loadProfileAndGetData() async {
-    await _loadProfile();
+    userToken = await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
 
     if (userToken.isNotEmpty) {
       _getAllDataLinks();
     } else {
       print('Token is empty, cannot fetch data');
     }
-  }
-
-  Future<void> _loadProfile() async {
-    userToken =
-        await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
   }
 
   Future<void> _getAllDataLinks() async {

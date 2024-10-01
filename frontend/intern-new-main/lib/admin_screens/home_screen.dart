@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:quickalert/quickalert.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Kodegiri/universal_screen/login_screen.dart';
 import 'package:Kodegiri/admin_screens/edit_profile_screen.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
@@ -25,12 +24,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String adminName = '';
   String adminEmail = '';
   String userToken = '';
+  String user_ID = '';
   List _datalink = [];
 
   @override
   void initState() {
     _loadProfile();
-    _getAllDataLinks();
     super.initState();
   }
 
@@ -41,12 +40,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadProfile() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      adminName = prefs.getString('name') ?? 'tidak ada nama';
-      adminEmail = prefs.getString('email') ?? 'tidak ada email';
-      userToken = prefs.getString('token') ?? 'tidak ada token';
-    });
+    userToken =
+        await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
+    if (userToken.isNotEmpty) {
+      user_ID = await SharedPreferencesHelper.getString('user_ID') ??
+          'tidak ada user_ID';
+      await _getAccount(context);
+      await _getAllDataLinks();
+    } else {
+      _showFeedback(context, 'Token is empty, cannot fetch data');
+    }
+  }
+
+  Future<void> _getAccount(BuildContext context) async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl/user/${user_ID}'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ); 
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status']) {
+          setState(() {
+            adminName = data['response']['name'] ?? '';
+            adminEmail = data['response']['email'] ?? '';
+          });
+        } else {
+          print('Failed to get links : ${data['message']}');
+          _showFeedback(context, 'Failed to get links : ${data['message']}');
+        }
+      } else {
+        Future.delayed(const Duration(milliseconds: 500));
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: "Failed",
+          confirmBtnColor: const Color(0xFFde0239),
+          text: "Failed to Get Data Sales Account",
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop();
+          },
+        );
+      }
+    } catch (e) {
+      print('Erorr cant get data : $e');
+      _showFeedback(context, 'Erorr cant get data : ${e}');
+    }
   }
 
   Future<void> _getAllDataLinks() async {
@@ -131,9 +173,9 @@ class _HomeScreenState extends State<HomeScreen> {
       cancelBtnText: 'Cancel',
       confirmBtnColor: const Color(0xFF12C06A),
       onConfirmBtnTap: () async {
-        Navigator.pop(context); 
-        await _deletedLink(context, index); 
-        await _getAllDataLinks(); 
+        Navigator.pop(context);
+        await _deletedLink(context, index);
+        await _getAllDataLinks();
       },
     );
   }

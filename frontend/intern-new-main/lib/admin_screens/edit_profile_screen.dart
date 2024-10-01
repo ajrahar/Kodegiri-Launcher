@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
+import 'package:Kodegiri/admin_screens/home_screen.dart';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:quickalert/quickalert.dart';
+import 'package:Kodegiri/universal_screen/all-alert.dart';
 
 class EditProfileScreen extends StatefulWidget {
   @override
@@ -16,6 +22,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isNameValid = true;
   bool _isEmailValid = true;
   bool _isPasswordValid = true;
+  String userToken = '';
+  String user_ID = '';
 
   @override
   void initState() {
@@ -24,18 +32,104 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nameController.text = prefs.getString('admin_name') ?? 'Admin Name';
-      _emailController.text =
-          prefs.getString('admin_email') ?? 'admin@example.com';
-    });
+    userToken =
+        await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
+    user_ID = await SharedPreferencesHelper.getString('user_ID') ??
+        'tidak ada user_ID';
+    if (user_ID.isNotEmpty) {
+      await _getAccount(context);
+    } else {
+      await CustomAlert.showFailedAlert(
+        context,
+        "user_ID tidak ada",
+      );
+    }
+  }
+
+  Future<void> _getAccount(BuildContext context) async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl/user/${user_ID}'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ); 
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status']) {
+          setState(() {
+            _nameController.text = data['response']['name'] ?? '';
+            _emailController.text = data['response']['email'] ?? '';
+          });
+        } else {
+          print('Failed to get links : ${data['message']}');
+          _showFeedback(context, 'Failed to get links : ${data['message']}');
+        }
+      } else {
+        Future.delayed(const Duration(milliseconds: 500));
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: "Failed",
+          confirmBtnColor: const Color(0xFFde0239),
+          text: "Failed to Get Data Sales Account",
+          onConfirmBtnTap: () {
+            Navigator.of(context).pop();
+          },
+        );
+      }
+    } catch (e) {
+      print('Erorr cant get data : $e');
+      _showFeedback(context, 'Erorr cant get data : ${e}');
+    }
   }
 
   Future<void> _saveAccount() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('admin_name', _nameController.text);
-    await prefs.setString('admin_email', _emailController.text);
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
+    if (_formKey.currentState!.validate()) {
+      final userId = user_ID;
+      final updatedAccount = {
+        'name': _nameController.text.isNotEmpty ? _nameController.text : '',
+        'email': _emailController.text.isNotEmpty ? _emailController.text : '',
+        'password':
+            _passwordController.text.isNotEmpty ? _passwordController.text : '',
+      };
+
+      try {
+        final response = await http.patch(
+          Uri.parse('$apiUrl/user/$userId'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(updatedAccount),
+        );
+        var responseData = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          await CustomAlert.showSuccessAlert(
+            context,
+            responseData["message"] ??
+                "Congratulations, Sales account successfully updated!",
+            onConfirmBtnTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+              );
+            },
+          );
+        } else {
+          await CustomAlert.showFailedAlert(
+            context,
+            responseData["message"] ?? "Failed to Update Sales Account",
+          );
+        }
+      } catch (e) {
+        await CustomAlert.showFailedAlert(
+          context,
+          '$e',
+        );
+      }
+    }
   }
 
   String? _validateField(String value, String field) {
@@ -53,6 +147,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (field == 'password') _isPasswordValid = true;
     });
     return null;
+  }
+
+  void _showFeedback(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
