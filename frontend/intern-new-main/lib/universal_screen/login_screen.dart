@@ -58,13 +58,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
-     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000'; 
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     final email = _usernameController.text;
     final password = _passwordController.text;
 
     try {
-      final response = await http.post(
-        Uri.parse('$apiUrl/user/auth/login'),        
+      final response = await http.post(Uri.parse('$apiUrl/user/auth/login'),
           body: {'email': email, 'password': password});
 
       var responseData = jsonDecode(response.body);
@@ -72,10 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
         String token = responseData['token'];
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         bool isAdmin = decodedToken['isAdmin'] == true;
+
         await SharedPreferencesHelper.saveString('name', decodedToken['name']);
-        await SharedPreferencesHelper.saveString(
-            'email', decodedToken['email']);
-        await SharedPreferencesHelper.saveString('token', token);
+        await SharedPreferencesHelper.saveString('email', decodedToken['email']);
+        await SharedPreferencesHelper.saveToken(token);
         _sweatAlert(context, isAdmin);
       } else {
         await Future.delayed(const Duration(milliseconds: 500));
@@ -85,8 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
           title: "Login Failed",
           confirmBtnColor: const Color(0xFFde0239),
           customAsset: 'assets/gif/Failed.gif',
-          text: responseData['message'] ??
-              "Login failed", 
+          text: responseData['message'] ?? "Login failed",
           onConfirmBtnTap: () {
             Navigator.pop(context);
           },
@@ -174,7 +172,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             double.infinity, // Button width same as TextFields
                         child: ElevatedButton(
                           onPressed: _login,
-                          child: Text('Login', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: Text('Login',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 const Color.fromARGB(255, 29, 44, 69),

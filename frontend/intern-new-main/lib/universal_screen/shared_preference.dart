@@ -1,6 +1,42 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesHelper {  
+  static const String tokenKey = 'token';
+  static const String tokenTimestampKey = 'token_timestamp';
+
+  static Future<void> saveToken(String token) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(tokenKey, token);
+    
+    await prefs.setInt(tokenTimestampKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  static Future<String?> getToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString(tokenKey);
+    int? tokenTimestamp = prefs.getInt(tokenTimestampKey);
+
+    if (token != null && tokenTimestamp != null) {      
+      int currentTime = DateTime.now().millisecondsSinceEpoch;
+      int elapsedTimeInHours = (currentTime - tokenTimestamp) ~/ (1000 * 60 * 60); 
+      
+      if (elapsedTimeInHours < 24) {
+        return token;
+      } else {      
+        await removeToken();
+        return null;
+      }
+    }
+
+    return null; 
+  }
+
+   static Future<void> removeToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove(tokenKey);
+    await prefs.remove(tokenTimestampKey);
+  }
+
   static Future<void> saveString(String key, String value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(key, value);
