@@ -164,6 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _viewArchived ? 'Archived Links' : 'Link Manager',
           style: const TextStyle(color: Colors.white),
         ),
+          centerTitle: true,
         backgroundColor: const Color(0xFF1F2937),
         actions: [
           IconButton(
@@ -248,7 +249,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Sidebar (Drawer) implementation
   Widget _buildSidebar() {
     return Drawer(
       child: ListView(

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-class LinkProvider with ChangeNotifier {
-  // Define your LinkProvider class here
+class LinkProvider with ChangeNotifier {  
   List<Map<String, String>> _links = [];
 
   List<Map<String, String>> get links => _links;
