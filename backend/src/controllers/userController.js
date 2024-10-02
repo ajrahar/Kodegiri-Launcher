@@ -1,4 +1,3 @@
-const { response } = require('express');
 const models = require('../../database/models/index');
 const bcrypt = require('bcrypt');
 
@@ -6,6 +5,7 @@ const bcrypt = require('bcrypt');
 const getAllUsers = async (req, res) => {
      try {
           const response = await models.User.findAll({
+               attributes: ['user_ID', 'name', 'email'],
                where: {
                     isAdmin: false
                }
@@ -24,6 +24,7 @@ const getAllUsers = async (req, res) => {
 const getUsersById = async (req, res) => {
      try {
           const response = await models.User.findOne({
+               attributes: ['user_ID', 'name', 'email'],
                where: {
                     user_ID: req.params.user_ID
                }

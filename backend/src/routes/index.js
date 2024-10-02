@@ -4,7 +4,7 @@ const userRouter = require('./userRouter.js')
 const authenticationRouter = require('./authenticationRouter.js')
 
 router.use(authenticationRouter); 
-router.use(linkRouter); 
 router.use(userRouter); 
+router.use(linkRouter); 
 
 module.exports = router;

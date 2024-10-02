@@ -22,8 +22,7 @@
     }
   ],
   "schemes": [
-    "http",
-    "https"
+    "http"
   ],
   "securityDefinitions": {
     "Bearer": {
@@ -55,145 +54,6 @@
             "schema": {
               "$ref": "#/definitions/Login"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/links": {
-      "get": {
-        "tags": [
-          "Link"
-        ],
-        "description": "Endpoint to get all link",
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Link"
-        ],
-        "description": "Endpoint to post a link",
-        "parameters": [
-          {
-            "name": "obj",
-            "in": "body",
-            "description": "Link information.",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/AddLink"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/link/{link_ID}": {
-      "get": {
-        "tags": [
-          "Link"
-        ],
-        "description": "Endpoint to get a link based ID",
-        "parameters": [
-          {
-            "name": "link_ID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "obj",
-            "in": "body",
-            "description": "Link information.",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/isAdmin"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "Link"
-        ],
-        "description": "Endpoint to update a link based ID",
-        "parameters": [
-          {
-            "name": "link_ID",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "obj",
-            "in": "body",
-            "description": "Updated Link information.",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/UpdateLink"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Link"
-        ],
-        "description": "Endpoint to delete a link based ID",
-        "parameters": [
-          {
-            "name": "link_ID",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "responses": {
@@ -344,15 +204,118 @@
         }
       }
     },
-    "/user/{email}": {
+    "/links": {
       "get": {
         "tags": [
-          "User"
+          "Link"
         ],
-        "description": "Endpoint to get a user based ID",
+        "description": "Endpoint to get all link",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Link"
+        ],
+        "description": "Endpoint to post a link",
         "parameters": [
           {
-            "name": "email",
+            "name": "obj",
+            "in": "body",
+            "description": "Link information.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AddLink"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/link/{link_ID}": {
+      "get": {
+        "tags": [
+          "Link"
+        ],
+        "description": "Endpoint to get a link based ID",
+        "parameters": [
+          {
+            "name": "link_ID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Link"
+        ],
+        "description": "Endpoint to update a link based ID",
+        "parameters": [
+          {
+            "name": "link_ID",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "obj",
+            "in": "body",
+            "description": "Updated Link information.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateLink"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Link"
+        ],
+        "description": "Endpoint to delete a link based ID",
+        "parameters": [
+          {
+            "name": "link_ID",
             "in": "path",
             "required": true,
             "type": "string"

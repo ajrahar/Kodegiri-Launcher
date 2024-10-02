@@ -41,12 +41,6 @@ router.delete("/user/:user_ID",
      /* 	#swagger.tags = ['User']
      #swagger.description = 'Endpoint to delete a user based ID' */
      DeleteUsers
-);
-
-router.get("/user/:email",
-     /* 	#swagger.tags = ['User']
-     #swagger.description = 'Endpoint to get a user based ID' */
-     getUsersByEmail
-)
+); 
 
 module.exports = router

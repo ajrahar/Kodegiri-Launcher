@@ -10,13 +10,6 @@ router.get("/links",
 router.get("/link/:link_ID",
      /* 	#swagger.tags = ['Link']
      #swagger.description = 'Endpoint to get a link based ID' */
-
-     /*	#swagger.parameters['obj'] = {
-        in: 'body',
-        description: 'Link information.',
-        required: true,
-        schema: { $ref: "#/definitions/isAdmin" }
-     } */
      getLinksById
 );
 

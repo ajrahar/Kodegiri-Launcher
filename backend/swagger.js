@@ -1,3 +1,6 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, './.env') });
+
 const swaggerAutogen = require('swagger-autogen')({
      autoHeaders: false,
      autoQuery: true,
@@ -11,9 +14,9 @@ const doc = {
           description: 'This is documentation for My API Web Launcher for CRM',
      },
      host: 'localhost:3000/api',
-     schemes: ['http', 'https'],
-     // host: 'api-crm.rikiadhin.my.id/api', for deploying
-     // schemes: ['https'], for deploying
+     schemes: ['http'],
+     // host: process.env.PROD_DB_HOSTNAME+'/api',
+     // schemes: ['https'],
      consumes: ['application/json'],
      produces: ['application/json'],
      tags: [ 

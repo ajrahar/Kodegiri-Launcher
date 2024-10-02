@@ -1,4 +1,3 @@
-const { response } = require('express');
 const models = require('../../database/models/index');
 
 // Get all links

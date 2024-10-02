@@ -1,14 +1,9 @@
 const models = require('../../database/models/index');
-const bcryptjs = require('bcrypt');
-const { response } = require('express');
-const jsonwebtoken = require('jsonwebtoken');
-const env = 'token';
-const config = require(__dirname + '/../../database/config/config.json')[env];
-const jwtToken = config.jwttoken;
+const bcryptjs = require('bcrypt'); 
+const jsonwebtoken = require('jsonwebtoken'); 
+const jwtToken = process.env.JWT_SECRET;
 
-const loginUser = async (req, res) => {
-     // const { email, password } = req.body;
-     // return res.status(200).json({ email: email, password: password });
+const loginUser = async (req, res) => { 
      try {
           const { email, password } = req.body;
           const dataUser = await models.User.findOne(
@@ -18,8 +13,7 @@ const loginUser = async (req, res) => {
                          email: email
                     }
                }
-          );
-          // return res.status(200).json({ dataUser: dataUser });
+          ); 
           if (dataUser) {
                const hashedPassword = dataUser.password;
                const passwordMatch = await bcryptjs.compare(password, hashedPassword);
@@ -30,7 +24,7 @@ const loginUser = async (req, res) => {
                          email: dataUser.email,
                          isAdmin: dataUser.isAdmin
                     }
-                    const token = await jsonwebtoken.sign(data, jwtToken)
+                    const token = jsonwebtoken.sign(data, jwtToken)
                     return res.status(200).json({ status: true, message: "Login user successfully " , token: token });
                     // return res.status(200).json({ passwordMatch: passwordMatch });
                } else {

@@ -1,5 +1,7 @@
 menjalankan program -->
 npm start
+(jika running local ubah /database/models/index.js bagian const env jadi 'development')
+(jika running deploy ubah /database/models/index.js bagian const env jadi 'production')
 
 melakukan migrasi ke database sesuai model -->
 npm run migration:all
