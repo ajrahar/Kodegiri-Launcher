@@ -6,8 +6,10 @@ import 'universal_screen/splash_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:Kodegiri/universal_screen/link_provider.dart'; 
 import 'package:Kodegiri/admin_screens/manage_sales_screen.dart';
+import 'package:Kodegiri/universal_screen/shared_preference.dart';
 
 void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
    await dotenv.load(fileName: "assets/.env");
   runApp(
     ChangeNotifierProvider(
@@ -25,7 +27,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SplashScreen(), 
+      home: AuthCheck(), 
       routes: {
         '/home': (context) => HomeScreen(),
         '/login': (context) => LoginScreen(), 
@@ -33,5 +35,39 @@ class MyApp extends StatelessWidget {
       },
       debugShowCheckedModeBanner: false, 
     );
+  }
+}
+
+class AuthCheck extends StatefulWidget {
+  @override
+  _AuthCheckState createState() => _AuthCheckState();
+}
+
+class _AuthCheckState extends State<AuthCheck> {
+  String? userToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkToken();
+  }
+
+  Future<void> _checkToken() async { 
+    String? token = await SharedPreferencesHelper.getString('token');
+
+    setState(() {
+      userToken = token;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (userToken == null) {      
+      return SplashScreen(); 
+    } else if (userToken!.isNotEmpty) {
+      return HomeScreen();
+    } else {    
+      return LoginScreen();
+    }
   }
 }
