@@ -14,7 +14,7 @@ class WebLauncherHomePage extends StatefulWidget {
 }
 
 class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
-  final List<Map<String, String>> _links = [];
+  // final List<Map<String, String>> _links = [];
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
