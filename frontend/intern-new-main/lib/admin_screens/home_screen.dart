@@ -189,7 +189,7 @@ void _logout() async {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).pop(); 
             },
             child: const Text("Cancel"),
           ),
@@ -197,6 +197,7 @@ void _logout() async {
             onPressed: () async {
               Navigator.of(context).pop(); // Close the dialog
               await SharedPreferencesHelper.removeData('name');
+              await SharedPreferencesHelper.removeToken();
               await SharedPreferencesHelper.removeData('email');
               Navigator.pushReplacement(
                 context,

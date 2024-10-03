@@ -30,16 +30,17 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
 
   @override
   void initState() {
-    _loadProfile();
-    _getAllDataAccount();
+    _loadProfile(); 
     super.initState();
   }
 
   Future<void> _loadProfile() async {
-    setState(() async {
-      userToken =
-          await SharedPreferencesHelper.getString('token') ?? 'token tidak ada';
-    });
+    userToken = await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
+    if (userToken.isNotEmpty) { 
+      await _getAllDataAccount();
+    } else {
+      _showFeedback(context, 'Token is empty, cannot fetch data');
+    }
   }
 
 Future<void> _getAllDataAccount() async {
