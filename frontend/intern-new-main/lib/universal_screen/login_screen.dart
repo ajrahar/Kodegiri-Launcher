@@ -168,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 20),
                       SizedBox(
                         width:
-                            double.infinity, // Button width same as TextFields
+                            double.infinity, 
                         child: ElevatedButton(
                           onPressed: _login,
                           child: Text('Login',
