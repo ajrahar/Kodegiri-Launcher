@@ -24,7 +24,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
   bool _isLinkValid = true;
 
   void _saveLink() async {
-     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';      
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
     if (_formKey.currentState!.validate()) {
       final title = _titleController.text;
       final url = _linkController.text;
@@ -38,7 +38,7 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
 
       try {
         final response = await http.post(
-           Uri.parse('$apiUrl/links'),
+          Uri.parse('$apiUrl/links'),
           headers: {
             'Authorization': '$token',
             'Content-Type': 'application/json',
@@ -52,31 +52,33 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
             print('Link created : ${data['message']}');
 
             await Future.delayed(const Duration(milliseconds: 500));
-            
+
             await QuickAlert.show(
               context: context,
               type: QuickAlertType.success,
               title: "Success",
-              confirmBtnColor: const Color(0xFF12C06A),  
-              customAsset: 'assets/gif/Success.gif', 
+              confirmBtnColor: const Color(0xFF12C06A),
+              customAsset: 'assets/gif/Success.gif',
               text: "Link Successfully Created!",
               onConfirmBtnTap: () {
                 Navigator.pop(context);
-              },              
+              },
             );
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
             );
           } else {
-            Future.delayed(const Duration(milliseconds: 500)); 
-           QuickAlert.show(context: context, type: QuickAlertType.error,
-           title: "Failed",
-           confirmBtnColor: const Color(0xFFde0239),
-           text: "Failed to Add Link",
-           onConfirmBtnTap: () {
-             Navigator.of(context).pop();
-           },
+            Future.delayed(const Duration(milliseconds: 500));
+            QuickAlert.show(
+              context: context,
+              type: QuickAlertType.error,
+              title: "Failed",
+              confirmBtnColor: const Color(0xFFde0239),
+              text: "Failed to Add Link",
+              onConfirmBtnTap: () {
+                Navigator.of(context).pop();
+              },
             );
             // ScaffoldMessenger.of(context).showSnackBar(
             //   SnackBar(
@@ -100,25 +102,30 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
     }
   }
 
-  String? _validateField(String value, String field) {
-    if (value.isEmpty) {
-      setState(() {
-        if (field == 'title') _isTitleValid = false;
-        if (field == 'link') _isLinkValid = false;
-      });
-      return '$field cannot be empty';
+  String? validateTitleLink(String? value) {
+    return value == null || value.isEmpty ? 'Title cannot be empty' : null;
+  }
+
+  String? validateLink(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Link cannot be empty'; // Cek jika input kosong
     }
-    setState(() {
-      if (field == 'title') _isTitleValid = true;
-      if (field == 'link') _isLinkValid = true;
-    });
-    return null;
+    const pattern =
+        r'^(https?:\/\/)?(www\.)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}\/?.*$';
+    final regex = RegExp(pattern);
+
+    if (!regex.hasMatch(value)) {
+      return 'Please enter a valid link (url)'; // Cek format input dengan regex
+    }
+
+    return null; // Validasi berhasil
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFF9F9F9),
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
@@ -130,91 +137,97 @@ class _WebLauncherHomePageState extends State<WebLauncherHomePage> {
             },
             icon: const Icon(Icons.arrow_back)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              const Text(
-                'Please fill out the form',
-                style: TextStyle(
-                    fontSize: 16, color: Color.fromARGB(255, 96, 95, 95)),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Title',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 95, 95, 95),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                const Text(
+                  'Please fill out the form',
+                  style: TextStyle(
+                      fontSize: 16, color: Color.fromARGB(255, 96, 95, 95)),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Enter the title',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: _isTitleValid ? Colors.grey : Colors.red,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  'Title',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 95, 95, 95),
                   ),
                 ),
-                validator: (value) => _validateField(value ?? '', 'Title'),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Link',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 95, 95, 95),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _linkController,
-                decoration: InputDecoration(
-                  hintText: 'Enter the Link',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: _isLinkValid ? Colors.grey : Colors.red,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                ),
-                validator: (value) => _validateField(value ?? '', 'Link'),
-              ),
-              const SizedBox(height: 60),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveLink,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 25, 47, 84),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    minimumSize: const Size(56, 56),
-                    shape: RoundedRectangleBorder(
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter the title',
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isTitleValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
                     ),
                   ),
-                  child: const Text('Save', style: TextStyle(fontSize: 18)),
+                  validator: (value) {
+                    return validateTitleLink(value ?? '');
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text(
+                  'Link',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 95, 95, 95),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _linkController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter the Link',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isLinkValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                  ),
+                  validator: (value) {
+                    return validateLink(value ?? '');
+                  },
+                ),
+                const SizedBox(height: 60),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveLink,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(56, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Save', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

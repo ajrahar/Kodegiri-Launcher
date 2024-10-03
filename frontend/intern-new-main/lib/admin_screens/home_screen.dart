@@ -18,23 +18,26 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  TextEditingController _searchController = TextEditingController();  
+  TextEditingController _searchController = TextEditingController();
 
   String adminName = '';
   String adminEmail = '';
   String userToken = '';
   String user_ID = '';
   List _datalink = [];
+  List _filteredLinks = [];
 
   @override
   void initState() {
-    _loadProfile();
     super.initState();
+    print(_filteredLinks.length);
+    _loadProfile();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchController.addListener(_filterDataLinks);
     super.dispose();
   }
 
@@ -59,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
         headers: {
           'Content-Type': 'application/json',
         },
-      ); 
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -163,6 +166,23 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  _filterDataLinks() {
+    String query = _searchController.text
+        .toLowerCase(); // Mengubah input menjadi huruf kecil
+    setState(() {
+      // Jika input pencarian kosong, tampilkan seluruh data
+      if (query.isEmpty) {
+        _filteredLinks = _datalink;
+      } else {
+        // Jika ada input pencarian, filter data berdasarkan judul yang mengandung teks pencarian
+        _filteredLinks = _datalink.where((link) {
+          String title = link['title'].toString().toLowerCase();
+          return title.contains(query);
+        }).toList();
+      }
+    });
+  }
+
   void _confirmAndDeleteLink(int index, context) async {
     QuickAlert.show(
       context: context,
@@ -179,38 +199,38 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-void _logout() async {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text("Confirm Logout"),
-        content: const Text("Are you sure you want to log out?"),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); 
-            },
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop(); // Close the dialog
-              await SharedPreferencesHelper.removeData('name');
-              await SharedPreferencesHelper.removeToken();
-              await SharedPreferencesHelper.removeData('email');
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            },
-            child: const Text("Logout"),
-          ),
-        ],
-      );
-    },
-  );
-}
+  void _logout() async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Logout"),
+          content: const Text("Are you sure you want to log out?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                await SharedPreferencesHelper.removeData('name');
+                await SharedPreferencesHelper.removeToken();
+                await SharedPreferencesHelper.removeData('email');
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              },
+              child: const Text("Logout"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,8 +242,8 @@ void _logout() async {
           style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1F2937),    
-        iconTheme: const IconThemeData(color: Colors.white),   
+        backgroundColor: const Color(0xFF1F2937),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: _buildSidebar(),
       body: Stack(
@@ -411,7 +431,7 @@ void _logout() async {
               const Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [                  
+                children: [
                   _buildIconButton(
                       Icons.edit, Colors.blue, () => _editLink(index)),
                   _buildIconButton(Icons.delete, Colors.red,
@@ -566,17 +586,28 @@ class EditScreen extends StatelessWidget {
       }
     }
 
-    String? _validateField(String value, String field) {
-      if (value.isEmpty) {
-        if (field == 'title') _isTitleValid = false;
-        if (field == 'link') _isLinkValid = false;
-        return '$field cannot be empty';
+    String? validateTitleLink(String? value) {
+      return value == null || value.isEmpty ? 'Title cannot be empty' : null;
+    }
+
+    String? validateLink(String? value) {
+      if (value == null || value.isEmpty) {
+        return 'Link cannot be empty'; // Cek jika input kosong
       }
-      return null;
+      const pattern =
+          r'^(https?:\/\/)?(www\.)?([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}\/?.*$';
+      final regex = RegExp(pattern);
+
+      if (!regex.hasMatch(value)) {
+        return 'Please enter a valid link (url)'; // Cek format input dengan regex
+      }
+
+      return null; // Validasi berhasil
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFFF9F9F9),
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
@@ -589,90 +620,92 @@ class EditScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              const Text(
-                'Please fill out the form',
-                style: TextStyle(fontSize: 16, color: Color(0xFF60605F)),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Title',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5F5F5F),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                const Text(
+                  'Please fill out the form',
+                  style: TextStyle(fontSize: 16, color: Color(0xFF60605F)),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  hintText: 'Enter the title',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: _isTitleValid ? Colors.grey : Colors.red,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text(
+                  'Title',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF5F5F5F),
                   ),
                 ),
-                validator: (value) => _validateField(value ?? '', 'Title'),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Link',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5F5F5F),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _linkController,
-                decoration: InputDecoration(
-                  hintText: 'Enter the Link',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: _isLinkValid ? Colors.grey : Colors.red,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                ),
-                validator: (value) => _validateField(value ?? '', 'Link'),
-              ),
-              const SizedBox(height: 60),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveLink,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 25, 47, 84),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    minimumSize: const Size(56, 56),
-                    shape: RoundedRectangleBorder(
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter the title',
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isTitleValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
                     ),
                   ),
-                  child: const Text('Save', style: TextStyle(fontSize: 18)),
+                  validator: (value) => validateTitleLink(value ?? ''),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text(
+                  'Link',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF5F5F5F),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _linkController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter the Link',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: _isLinkValid ? Colors.grey : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                  ),
+                  validator: (value) => validateLink(value ?? ''),
+                ),
+                const SizedBox(height: 60),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _saveLink,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 25, 47, 84),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(56, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Save', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
