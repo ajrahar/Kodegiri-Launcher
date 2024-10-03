@@ -18,8 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  TextEditingController _searchController = TextEditingController();
-  bool _viewArchived = false;
+  TextEditingController _searchController = TextEditingController();  
 
   String adminName = '';
   String adminEmail = '';
@@ -180,14 +179,37 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _logout() async {
-    await SharedPreferencesHelper.removeData('name');
-    await SharedPreferencesHelper.removeData('email');
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-    );
-  }
+void _logout() async {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Confirm Logout"),
+        content: const Text("Are you sure you want to log out?"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop(); // Close the dialog
+              await SharedPreferencesHelper.removeData('name');
+              await SharedPreferencesHelper.removeData('email');
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            },
+            child: const Text("Logout"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -195,18 +217,12 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
         title: Text(
-          _viewArchived ? 'Archived Links' : 'Link Manager',
+          'Link Manager',
           style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF1F2937),
-        actions: [
-          IconButton(
-            icon: Icon(_viewArchived ? Icons.view_list : Icons.archive),
-            onPressed: () =>
-                _showFeedback(context, 'Fitur ini masih dalam proses'),
-          ),
-        ],
+        backgroundColor: const Color(0xFF1F2937),    
+        iconTheme: const IconThemeData(color: Colors.white),   
       ),
       drawer: _buildSidebar(),
       body: Stack(
@@ -394,19 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (_viewArchived)
-                    _buildIconButton(
-                        Icons.unarchive,
-                        Colors.green,
-                        () => () => _showFeedback(
-                            context, 'Fitur ini masih dalam proses'))
-                  else
-                    _buildIconButton(
-                        Icons.archive,
-                        Colors.orange,
-                        () => () => _showFeedback(
-                            context, 'Fitur ini masih dalam proses')),
+                children: [                  
                   _buildIconButton(
                       Icons.edit, Colors.blue, () => _editLink(index)),
                   _buildIconButton(Icons.delete, Colors.red,

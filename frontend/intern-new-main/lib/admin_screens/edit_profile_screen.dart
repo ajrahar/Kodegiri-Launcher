@@ -22,6 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isNameValid = true;
   bool _isEmailValid = true;
   bool _isPasswordValid = true;
+  bool _obscurePassword = true;
   String userToken = '';
   String user_ID = '';
 
@@ -29,6 +30,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
   }
 
   Future<void> _loadProfile() async {
@@ -54,7 +61,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         headers: {
           'Content-Type': 'application/json',
         },
-      ); 
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status']) {
@@ -166,6 +173,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: const Color.fromARGB(255, 25, 47, 84),
         foregroundColor: Colors.white,
         title: const Text('Edit Profile'),
+        centerTitle: true,
         leading: IconButton(
             onPressed: () {
               Navigator.pushReplacement(
@@ -236,7 +244,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Enter password',
                     border: OutlineInputBorder(
@@ -248,6 +256,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.grey),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: _togglePasswordVisibility,
+                      color: const Color.fromARGB(255, 25, 47, 84),
                     ),
                   ),
                   validator: (value) => _validateField(value ?? '', 'Password'),
