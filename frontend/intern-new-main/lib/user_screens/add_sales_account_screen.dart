@@ -95,6 +95,22 @@ class _AddSalesAccountScreenState extends State<AddSalesAccountScreen> {
       });
       return '$field should not be empty';
     }
+    if (field == 'email') {
+     
+      String pattern = r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
+      RegExp regex = RegExp(pattern);
+      if (!regex.hasMatch(value)) {
+        setState(() => _isEmailValid = false);
+        return 'Enter a valid email address';
+      }
+    }
+    if (field == 'password') {
+      
+      if (value.length < 8) {
+        setState(() => _isPasswordValid = false);
+        return 'Password must be at least 8 characters long';
+      }
+    }
     setState(() {
       if (field == 'name') _isNameValid = true;
       if (field == 'email') _isEmailValid = true;
