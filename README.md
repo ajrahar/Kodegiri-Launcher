@@ -1,11 +1,4 @@
-Berikut adalah format README yang lebih rapi dan mudah dibaca untuk dokumentasi GitHub atau GitLab:
-
----
-
 # Kodegiri Web Launcher
-
-## Introduction
-
 **Welcome to the fully customizable CRM mobile app!**  
 This app is designed to meet your business needs by providing direct access to your personalized CRM. Each client has their own unique domain, individual user credentials, and a security token to ensure safe access to the CRM.
 
