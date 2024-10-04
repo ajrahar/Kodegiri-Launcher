@@ -17,27 +17,21 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  TextEditingController _searchController = TextEditingController();
-
+class _HomeScreenState extends State<HomeScreen> {  
   String adminName = '';
   String adminEmail = '';
   String userToken = '';
   String user_ID = '';
-  List _datalink = [];
-  List _filteredLinks = [];
+  List _datalink = []; 
 
   @override
   void initState() {
-    super.initState();
-    print(_filteredLinks.length);
+    super.initState(); 
     _loadProfile();
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    // _searchController.addListener(_filterDataLinks);
+  void dispose() { 
     super.dispose();
   }
 
@@ -165,24 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _showFeedback(context, 'Erorr cant delete data : ${e}');
     }
   }
-
-  _filterDataLinks() {
-    String query = _searchController.text
-        .toLowerCase(); // Mengubah input menjadi huruf kecil
-    setState(() {
-      // Jika input pencarian kosong, tampilkan seluruh data
-      if (query.isEmpty) {
-        _filteredLinks = _datalink;
-      } else {
-        // Jika ada input pencarian, filter data berdasarkan judul yang mengandung teks pencarian
-        _filteredLinks = _datalink.where((link) {
-          String title = link['title'].toString().toLowerCase();
-          return title.contains(query);
-        }).toList();
-      }
-    });
-  }
-
+ 
   void _confirmAndDeleteLink(int index, context) async {
     QuickAlert.show(
       context: context,
@@ -263,19 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Search by title',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    fillColor: Colors.white,
-                    filled: true,
-                  ),
-                ),
+              children: [ 
                 const SizedBox(height: 16),
                 Expanded(
                   child: GridView.builder(
