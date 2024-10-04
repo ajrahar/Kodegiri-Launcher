@@ -17,21 +17,21 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {  
+class _HomeScreenState extends State<HomeScreen> {
   String adminName = '';
   String adminEmail = '';
   String userToken = '';
   String user_ID = '';
-  List _datalink = []; 
+  List _datalink = [];
 
   @override
   void initState() {
-    super.initState(); 
+    super.initState();
     _loadProfile();
   }
 
   @override
-  void dispose() { 
+  void dispose() {
     super.dispose();
   }
 
@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _showFeedback(context, 'Erorr cant delete data : ${e}');
     }
   }
- 
+
   void _confirmAndDeleteLink(int index, context) async {
     QuickAlert.show(
       context: context,
@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              children: [ 
+              children: [
                 const SizedBox(height: 16),
                 Expanded(
                   child: GridView.builder(
@@ -395,7 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const Spacer(),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildIconButton(
                       Icons.edit, Colors.blue, () => _editLink(index)),
