@@ -114,7 +114,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
           },
           body: jsonEncode(updatedAccount),
         );
-
+        var responseData = jsonDecode(response.body);
         if (response.statusCode == 200) {
           Future.delayed(const Duration(milliseconds: 500));
           await QuickAlert.show(
@@ -123,7 +123,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
             title: "Success",
             confirmBtnColor: const Color(0xFF12C06A),
             customAsset: 'assets/gif/Success.gif',
-            text: "Congratulations, Sales account successfully updated!",
+            text: responseData['message'],
             onConfirmBtnTap: () {
               Navigator.of(context).pop();
               Navigator.pushReplacement(
@@ -141,7 +141,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
             type: QuickAlertType.error,
             title: "Failed",
             confirmBtnColor: const Color(0xFFde0239),
-            text: "Failed to Update Sales Account",
+            text: responseData['message'],
             onConfirmBtnTap: () {
               Navigator.of(context).pop();
             },
@@ -194,6 +194,7 @@ class _EditSalesAccountScreenState extends State<EditSalesAccountScreen> {
   }
 
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0XFFF9F9F9),

@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _searchController.addListener(_filterDataLinks);
+    // _searchController.addListener(_filterDataLinks);
     super.dispose();
   }
 
@@ -475,58 +475,54 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (context) => EditScreen(
           linkData: linkData,
-          onSave: (updatedData) {
+          onSave: (updatedData) async {
             final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
-            setState(() async {
-              try {
-                final response = await http.patch(
-                  Uri.parse('$apiUrl/link/$index'),
-                  headers: {
-                    'Authorization': '$userToken',
-                    'Content-Type': 'application/json',
-                  },
-                  body: jsonEncode(updatedData),
-                );
+            try {
+              final response = await http.patch(
+                Uri.parse('$apiUrl/link/$index'),
+                headers: {
+                  'Authorization': '$userToken',
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode(updatedData),
+              );
 
-                if (response.statusCode == 200) {
-                  final data = jsonDecode(response.body);
+              if (response.statusCode == 200) {
+                final data = jsonDecode(response.body);
 
-                  if (data['status'] == true) {
-                    await Future.delayed(const Duration(milliseconds: 500));
+                if (data['status'] == true) {
+                  await Future.delayed(const Duration(milliseconds: 500));
 
-                    await QuickAlert.show(
-                      context: context,
-                      type: QuickAlertType.success,
-                      onConfirmBtnTap: () {
-                        Navigator.pop(context);
-                      },
-                      confirmBtnColor: const Color(0xFF12C06A),
-                      customAsset: 'assets/gif/Success.gif',
-                      text: "Link successfully updated!",
-                    );
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content:
-                              Text('Failed to update: ${data['message']}')),
-                    );
-                  }
+                  await QuickAlert.show(
+                    context: context,
+                    type: QuickAlertType.success,
+                    onConfirmBtnTap: () {
+                      Navigator.pop(context);
+                    },
+                    confirmBtnColor: const Color(0xFF12C06A),
+                    customAsset: 'assets/gif/Success.gif',
+                    text: "Link successfully updated!",
+                  );
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomeScreen()),
+                  );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                        content: Text('Error code: ${response.statusCode}')),
+                        content: Text('Failed to update: ${data['message']}')),
                   );
                 }
-              } catch (e) {
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e')),
+                  SnackBar(content: Text('Error code: ${response.statusCode}')),
                 );
               }
-            });
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: $e')),
+              );
+            }
           },
         ),
       ),

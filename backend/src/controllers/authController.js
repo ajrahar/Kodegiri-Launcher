@@ -5,7 +5,7 @@ const jwtToken = process.env.JWT_SECRET;
 
 const loginUser = async (req, res) => { 
      try {
-          const { email, password } = req.body;
+          const { email, password } = req.body; 
           const dataUser = await models.User.findOne(
                {
                     where:
@@ -16,7 +16,7 @@ const loginUser = async (req, res) => {
           ); 
           if (dataUser) {
                const hashedPassword = dataUser.password;
-               const passwordMatch = await bcryptjs.compare(password, hashedPassword);
+               const passwordMatch = await bcryptjs.compare(password, hashedPassword);  
                if (passwordMatch) {
                     const data = {
                          user_ID: dataUser.user_ID,

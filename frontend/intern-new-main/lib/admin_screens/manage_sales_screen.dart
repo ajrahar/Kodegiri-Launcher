@@ -30,57 +30,56 @@ class _SalesAccountScreenState extends State<SalesAccountScreen> {
 
   @override
   void initState() {
-    _loadProfile(); 
+    _loadProfile();
     super.initState();
   }
 
   Future<void> _loadProfile() async {
-    userToken = await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
-    if (userToken.isNotEmpty) { 
+    userToken =
+        await SharedPreferencesHelper.getString('token') ?? 'tidak ada token';
+    if (userToken.isNotEmpty) {
       await _getAllDataAccount();
     } else {
       _showFeedback(context, 'Token is empty, cannot fetch data');
     }
   }
 
-Future<void> _getAllDataAccount() async {
-  final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
-  try {
-    final response = await http.get(
-      Uri.parse('$apiUrl/users/'),
-      headers: {
-        'Authorization': '$userToken',
-        'Content-Type': 'application/json',
-      },
-    );
-    
-    var responseData = jsonDecode(response.body);
-    
-    if (response.statusCode == 200 && responseData['status']) {
-      final List<dynamic> dataAccountList = responseData['response'];
-      setState(() {
-        _dataAccounts = dataAccountList
-            .map((account) => account as Map<String, dynamic>)
-            .toList();
-      });
-    } else {
-      await Future.delayed(const Duration(milliseconds: 500));
-      await QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        text: responseData['message'] ?? 'Failed to get account data!',
-        confirmBtnColor: const Color(0xFFde0239),
-        onConfirmBtnTap: () {
-          Navigator.pop(context);
-        }
+  Future<void> _getAllDataAccount() async {
+    final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
+    try {
+      final response = await http.get(
+        Uri.parse('$apiUrl/users/'),
+        headers: {
+          'Authorization': '$userToken',
+          'Content-Type': 'application/json',
+        },
       );
-    }
-  } catch (e) {
-    print('Error cant get data : $e');
-    _showFeedback(context, 'Error cant get data : $e');
-  }
-}
 
+      var responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['status']) {
+        final List<dynamic> dataAccountList = responseData['response'];
+        setState(() {
+          _dataAccounts = dataAccountList
+              .map((account) => account as Map<String, dynamic>)
+              .toList();
+        });
+      } else {
+        await Future.delayed(const Duration(milliseconds: 500));
+        await QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            text: responseData['message'] ?? 'Failed to get account data!',
+            confirmBtnColor: const Color(0xFFde0239),
+            onConfirmBtnTap: () {
+              Navigator.pop(context);
+            });
+      }
+    } catch (e) {
+      print('Error cant get data : $e');
+      _showFeedback(context, 'Error cant get data : $e');
+    }
+  }
 
   void _addAccount() {
     Navigator.push(
@@ -139,7 +138,7 @@ Future<void> _getAllDataAccount() async {
             type: QuickAlertType.success,
             title: "Success",
             confirmBtnColor: const Color(0xFF12C06A),
-            text: responseData['message'] ?? "Deleted Account",
+            text: responseData['message'] ?? "Successfully Deleted Account",
             onConfirmBtnTap: () {
               Navigator.pop(context);
               _getAllDataAccount();
@@ -178,7 +177,9 @@ Future<void> _getAllDataAccount() async {
       cancelBtnText: 'Cancel',
       confirmBtnColor: const Color(0xFF12C06A),
       onConfirmBtnTap: () async {
-        Navigator.pop(context);
+        Navigator.pop(context); // Menutup PopupMenuButton
+        Navigator.pop(context); // Menutup QuickAlert
+
         await _deletedAccount(context, index);
         await _getAllDataAccount();
       },

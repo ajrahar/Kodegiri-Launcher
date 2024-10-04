@@ -52,7 +52,7 @@ const createUsers = async (req, res) => {
           });
 
           if (response) {
-               return res.status(409).json({ status: false, message: "User data already exists" });
+               return res.status(409).json({ status: false, message: "Email user already exists" });
           }
           const data = {
                name: name,
@@ -71,9 +71,38 @@ const createUsers = async (req, res) => {
 // Update user by ID
 const UpdateUsers = async (req, res) => {
      try {
-          const { name, email, password } = req.body;
-          const hashedPassword = await bcrypt.hash(password, 10);
-          const [response] = await models.User.update({ name, email, password: hashedPassword }, {
+          const { name, email, password } = req.body; 
+          const user = await models.User.findOne({
+               where: {
+                    user_ID: req.params.user_ID,
+               },
+          });  
+          if (email != user.email) {
+               const getUserByEmail = await models.User.findOne({
+                    where: {
+                         email: email,
+                    },
+               });
+
+               if (getUserByEmail) {
+                    return res.status(409).json({
+                         status: false,
+                         message: "Email user already exists",
+                    });
+               }
+          }
+ 
+          const data = {
+               name: name || user.name, 
+               email: email || user.email, 
+          };
+
+          // Cek jika password diisi, baru lakukan hashing dan update
+          if (password && password.trim() !== "") {
+               const hashedPassword = await bcrypt.hash(password, 10);
+               data.password = hashedPassword;
+          }
+          const [response] = await models.User.update(data, {
                where: {
                     user_ID: req.params.user_ID
                }

@@ -14,9 +14,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isEmailValid = true;
+  bool _isPasswordValid = true;
 
   @override
   void initState() {
@@ -57,50 +60,80 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email cannot be empty'; // Cek jika input kosong
+    }
+    const pattern = r"(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'"
+        r'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-'
+        r'\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*'
+        r'[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4]'
+        r'[0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9]'
+        r'[0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\'
+        r'x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])';
+    final regex = RegExp(pattern);
+
+    if (!regex.hasMatch(value)) {
+      return 'Please enter a valid email'; // Cek format input dengan regex
+    }
+
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password cannot be empty'; // Cek jika input kosong
+    }
+    return null;
+  }
 
   void _login() async {
     final apiUrl = dotenv.env['API_URL'] ?? 'http://localhost:3000';
-    final email = _usernameController.text;
-    final password = _passwordController.text;
+    if (_formKey.currentState!.validate()) {
+      final email = _usernameController.text;
+      final password = _passwordController.text;
 
-    try {
-      final response = await http.post(Uri.parse('$apiUrl/user/auth/login'),
-          body: {'email': email, 'password': password});
+      try {
+        final response = await http.post(Uri.parse('$apiUrl/user/auth/login'),
+            body: {'email': email, 'password': password});
 
-      var responseData = jsonDecode(response.body);
-      if (responseData['status']) {
-        String token = responseData['token'];
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        bool isAdmin = decodedToken['isAdmin'] == true;
+        var responseData = jsonDecode(response.body);
+        if (responseData['status']) {
+          String token = responseData['token'];
+          Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+          bool isAdmin = decodedToken['isAdmin'] == true;
 
-        await SharedPreferencesHelper.saveString('user_ID', decodedToken['user_ID']);
-        await SharedPreferencesHelper.saveToken(token);
-        _sweatAlert(context, isAdmin);
-      } else {
-        await Future.delayed(const Duration(milliseconds: 500));
-        await QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: "Login Failed",
-          confirmBtnColor: const Color(0xFFde0239),
-          customAsset: 'assets/gif/Failed.gif',
-          text: responseData['message'] ?? "Login failed",
-          onConfirmBtnTap: () {
-            Navigator.pop(context);
-          },
+          await SharedPreferencesHelper.saveString(
+              'user_ID', decodedToken['user_ID']);
+          await SharedPreferencesHelper.saveToken(token);
+          _sweatAlert(context, isAdmin);
+        } else {
+          await Future.delayed(const Duration(milliseconds: 500));
+          await QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: "Login Failed",
+            confirmBtnColor: const Color(0xFFde0239),
+            customAsset: 'assets/gif/Failed.gif',
+            text: responseData['message'] ?? "Login failed",
+            onConfirmBtnTap: () {
+              Navigator.pop(context);
+            },
+          );
+        }
+      } catch (e) {
+        print('Cannot get data. Error : $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cannot get data. Error : $e')),
         );
       }
-    } catch (e) {
-      print('Cannot get data. Error : $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cannot get data. Error : $e')),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -112,85 +145,106 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/kodegiri.png', height: 100),
-                SizedBox(height: 20),
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _usernameController,
-                        decoration: InputDecoration(
-                            labelText: 'Email',
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('assets/images/kodegiri.png', height: 100),
+                  SizedBox(height: 20),
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter email',
                             border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: _isEmailValid ? Colors.grey : Colors.red,
+                              ),
+                            ),
                             labelStyle: TextStyle(
                                 color: const Color.fromARGB(255, 35, 61, 105)),
                             suffixIcon: Icon(
                               Icons.email,
                               color: const Color.fromARGB(255, 25, 47, 84),
-                            )),
-                      ),
-                      SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          labelStyle: TextStyle(
-                              color: const Color.fromARGB(255, 23, 37, 61)),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
                             ),
-                            onPressed: _togglePasswordVisibility,
-                            color: const Color.fromARGB(255, 25, 47, 84),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        width:
-                            double.infinity, 
-                        child: ElevatedButton(
-                          onPressed: _login,
-                          child: Text('Login',
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color.fromARGB(255, 29, 44, 69),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 50, vertical: 20),
-                            shape: RoundedRectangleBorder(
+                            focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.grey),
+                            ),
+                          ),
+                          validator: (value) => _validateEmail(value ?? ''),
+                        ),
+                        SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            hintText: 'Enter password',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: _isEmailValid ? Colors.grey : Colors.red,
+                              ),
+                            ),
+                            labelStyle: TextStyle(
+                                color: const Color.fromARGB(255, 35, 61, 105)),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: _togglePasswordVisibility,
+                              color: const Color.fromARGB(255, 25, 47, 84),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.grey),
+                            ),
+                          ),
+                          validator: (value) => _validatePassword(value ?? ''),
+                        ),
+                        SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _login,
+                            child: Text('Login',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color.fromARGB(255, 29, 44, 69),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 50, vertical: 20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
