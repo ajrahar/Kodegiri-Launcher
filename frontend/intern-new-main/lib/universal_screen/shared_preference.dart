@@ -16,7 +16,7 @@ class SharedPreferencesHelper {
     String? token = prefs.getString(tokenKey);
     int? tokenTimestamp = prefs.getInt(tokenTimestampKey);
 
-    if (token != null && tokenTimestamp != null) {      
+    if (tokenTimestamp != null) {      
       int currentTime = DateTime.now().millisecondsSinceEpoch;
       int elapsedTimeInHours = (currentTime - tokenTimestamp) ~/ (1000 * 60 * 60); 
       
